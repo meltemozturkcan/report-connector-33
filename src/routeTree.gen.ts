@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ButceRouteImport } from './routes/butce'
+import { Route as SatisRouteImport } from './routes/satis'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ButceRoute = ButceRouteImport.update({
+  id: '/butce',
+  path: '/butce',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SatisRoute = SatisRouteImport.update({
+  id: '/satis',
+  path: '/satis',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/butce': typeof ButceRoute
+  '/satis': typeof SatisRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/butce': typeof ButceRoute
+  '/satis': typeof SatisRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/butce': typeof ButceRoute
+  '/satis': typeof SatisRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/butce' | '/satis'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/butce' | '/satis'
+  id: '__root__' | '/' | '/butce' | '/satis'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ButceRoute: typeof ButceRoute
+  SatisRoute: typeof SatisRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/butce': {
+      id: '/butce'
+      path: '/butce'
+      fullPath: '/butce'
+      preLoaderRoute: typeof ButceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/satis': {
+      id: '/satis'
+      path: '/satis'
+      fullPath: '/satis'
+      preLoaderRoute: typeof SatisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ButceRoute: ButceRoute,
+  SatisRoute: SatisRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

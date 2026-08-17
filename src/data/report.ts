@@ -202,3 +202,30 @@ export const narrative = {
     { action: "Enerji verimliliği yatırımı yıl sonuna ertelenerek nakit korunacak.", owner: "Yönetim", due: "Karar alındı" },
   ],
 };
+
+/** Türetilmiş kısayollar (indeks erişimini tek noktada toplar). */
+export const currentMonth = monthly[monthly.length - 1] as MonthlyPoint;
+export const previousMonth = monthly[monthly.length - 2] as MonthlyPoint;
+
+export type MarginPoint = { month: string; gross: number; ebitda: number; net: number };
+export const currentMargin = margins[margins.length - 1] as MarginPoint;
+export const previousMargin = margins[margins.length - 2] as MarginPoint;
+
+export type VarianceRow = { item: string; budget: number; actual: number };
+export const netProfitVariance = budgetVariance.find((r) => r.item === "Net kâr") as VarianceRow;
+
+export type WorkingCapitalRow = {
+  name: string;
+  current: number;
+  previous: number;
+  days: number;
+  targetDays: number;
+};
+export const receivables = workingCapital[0] as WorkingCapitalRow;
+export const inventory = workingCapital[1] as WorkingCapitalRow;
+export const payables = workingCapital[2] as WorkingCapitalRow;
+
+export type Scenario = { name: string; sales: number; ebitda: number; netCash: number };
+export const baseScenario = forecast.scenarios[1] as Scenario;
+export const worstScenario = forecast.scenarios[0] as Scenario;
+export const bestScenario = forecast.scenarios[2] as Scenario;
