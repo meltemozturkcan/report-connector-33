@@ -1,24 +1,171 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { AppShell } from "@/components/report/AppShell";
+import { PageHeader } from "@/components/report/PageHeader";
+import { KpiCard } from "@/components/report/KpiCard";
+import { Section } from "@/components/report/Section";
+import { DataTable } from "@/components/report/DataTable";
+import {
+  budgetVariance,
+  cashFlow,
+  debt,
+  forecast,
+  margins,
+  monthly,
+  narrative,
+  workingCapital,
+} from "@/data/report";
+import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Yönetici Özeti — Aylık Yönetim Raporu" },
+      {
+        name: "description",
+        content:
+          "Aylık yönetim raporu yönetici özeti: neredeyiz, neden buradayız ve bundan sonra ne yapacağız sorularının cevabı.",
+      },
+      { property: "og:title", content: "Yönetici Özeti — Aylık Yönetim Raporu" },
+      {
+        property: "og:description",
+        content: "Satış, kârlılık, nakit ve borç göstergelerinin birbirine bağlandığı tek sayfalık özet.",
+      },
+    ],
+  }),
+  component: ExecutiveSummary,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function ExecutiveSummary() {
+  const current = monthly[monthly.length - 1];
+  const previous = monthly[monthly.length - 2];
+  const netProfitBudget = budgetVariance.find((row) => row.item === "Net kâr");
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
+    <AppShell>
+      <PageHeader
+        title="Yönetici Özeti"
+        description="Rakamların tek tek listelenmesi değil, aralarındaki bağlantı önemlidir. Bu sayfa üç soruyu yanıtlar: Neredeyiz? Neden buradayız? Bundan sonra ne yapacağız?"
       />
-    </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Net satış"
+          value={formatAmount(current.sales)}
+          delta={{
+            text: `${formatPercent(changePercent(current.sales, previous.sales))} önceki aya göre`,
+            tone: "positive",
+          }}
+        />
+        <KpiCard
+          label="FAVÖK marjı"
+          value={formatPercent(margins[margins.length - 1].ebitda)}
+          delta={{ text: "1,0 puan gerileme", tone: "negative" }}
+        />
+        <KpiCard
+          label="Faaliyet nakit akışı"
+          value={formatAmount(cashFlow.operating)}
+          delta={{ text: "Negatife döndü", tone: "negative" }}
+        />
+        <KpiCard
+          label="Net borç / FAVÖK"
+          value={formatRatio(debt.netDebtToEbitda, 1)}
+          delta={{ text: `DSCR ${formatRatio(debt.dscr, 2)}`, tone: "negative" }}
+        />
+      </div>
+
+      <Section
+        title="1. Neredeyiz?"
+        description="Ayın fotoğrafı: satış, kârlılık, nakit ve borcun bulunduğu nokta."
+      >
+        <ul className="space-y-2 text-sm leading-relaxed text-foreground">
+          {narrative.where.map((line) => (
+            <li key={line} className="flex gap-2">
+              <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 bg-primary" />
+              {line}
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section
+        title="2. Neden buradayız?"
+        description="Rakamlar arasındaki bağlantı: satış, kâr, nakit ve borç zinciri."
+      >
+        <ul className="space-y-2 text-sm leading-relaxed text-foreground">
+          {narrative.why.map((line) => (
+            <li key={line} className="flex gap-2">
+              <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 bg-primary" />
+              {line}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 border-l-2 border-primary bg-muted/60 px-4 py-3 text-sm leading-relaxed">
+          Kısaca: satış arttı, kâr artmadı; kâr nakde dönmedi, işletme sermayesinde bağlandı; nakit
+          açığı borçla kapandı, geri ödeme kapasitesi zayıfladı. Bütçe sapması yıl sonu FAVÖK
+          tahminini {formatAmount(forecast.budgetFullYear.ebitda - forecast.scenarios[1].ebitda)} bin
+          TL aşağı çekiyor.
+        </p>
+      </Section>
+
+      <Section
+        title="3. Bundan sonra ne yapacağız?"
+        description="Karar gerektiren aksiyonlar, sorumlu ve termin."
+      >
+        <DataTable
+          caption="Aksiyon planı"
+          rowKey={(row) => row.action}
+          rows={narrative.next}
+          columns={[
+            { header: "Aksiyon", cell: (row) => row.action },
+            { header: "Sorumlu", cell: (row) => row.owner },
+            { header: "Termin", align: "right", cell: (row) => row.due },
+          ]}
+        />
+      </Section>
+
+      <Section title="Kilit göstergeler" description="Yönetimin ay boyunca takip ettiği sayılar.">
+        <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { label: "Net satış", value: formatAmount(current.sales) },
+            { label: "Brüt kâr marjı", value: formatPercent(margins[margins.length - 1].gross) },
+            { label: "FAVÖK", value: formatAmount(current.ebitda) },
+            {
+              label: "Net kâr / bütçe",
+              value: `${formatAmount(netProfitBudget?.actual ?? 0)} / ${formatAmount(netProfitBudget?.budget ?? 0)}`,
+            },
+            { label: "Dönem sonu nakit", value: formatAmount(cashFlow.closing) },
+            { label: "Net borç", value: formatAmount(debt.net) },
+            { label: "Alacak gün sayısı", value: `${workingCapital[0].days} gün` },
+            { label: "Stok gün sayısı", value: `${workingCapital[1].days} gün` },
+            { label: "DSCR", value: formatRatio(debt.dscr, 2) },
+          ].map((item) => (
+            <div key={item.label} className="flex justify-between border-b border-border/60 py-1.5">
+              <dt className="text-sm text-muted-foreground">{item.label}</dt>
+              <dd className="text-sm font-medium tabular-nums text-foreground">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </Section>
+
+      <nav aria-label="Detay sayfaları" className="flex flex-wrap gap-2 text-sm">
+        {[
+          { to: "/satis", label: "Satış performansı" },
+          { to: "/butce", label: "Bütçe sapmaları" },
+          { to: "/karlilik", label: "Kârlılık" },
+          { to: "/nakit", label: "Nakit ve işletme sermayesi" },
+          { to: "/finansman", label: "Borç ve CAPEX" },
+          { to: "/tahmin", label: "Yıl sonu tahmini" },
+        ].map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className="border border-border bg-card px-3 py-1.5 text-foreground transition-colors hover:bg-muted"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    </AppShell>
   );
 }
