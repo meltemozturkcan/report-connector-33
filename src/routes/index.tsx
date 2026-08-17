@@ -159,6 +159,8 @@ function ExecutiveSummary() {
           { to: "/nakit", label: "Nakit ve işletme sermayesi" },
           { to: "/finansman", label: "Borç ve CAPEX" },
           { to: "/tahmin", label: "Yıl sonu tahmini" },
+          { to: "/cac", label: "Müşteri kazanım maliyeti (CAC)" },
+          { to: "/ltv", label: "Müşteri yaşam boyu değeri (LTV)" },
         ].map((item) => (
           <Link
             key={item.to}
