@@ -11,6 +11,8 @@ const navItems = [
   { to: "/nakit", label: "Nakit ve İşletme Sermayesi" },
   { to: "/finansman", label: "Borç, Kredi ve CAPEX" },
   { to: "/tahmin", label: "Yıl Sonu Tahmini" },
+  { to: "/cac", label: "CAC" },
+  { to: "/ltv", label: "LTV" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {

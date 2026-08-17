@@ -229,3 +229,68 @@ export type Scenario = { name: string; sales: number; ebitda: number; netCash: n
 export const baseScenario = forecast.scenarios[1] as Scenario;
 export const worstScenario = forecast.scenarios[0] as Scenario;
 export const bestScenario = forecast.scenarios[2] as Scenario;
+
+/** Girişim (startup) birim ekonomisi — CAC ve LTV. Tutarlar TL / müşteri bazındadır. */
+export type UnitEconomicsPoint = {
+  month: string;
+  newCustomers: number;
+  marketingSpend: number; // bin TL
+  salesSpend: number; // bin TL
+  cac: number; // TL
+  ltv: number; // TL
+  churnRate: number; // %
+  arpu: number; // TL / ay
+};
+
+export const unitEconomics: UnitEconomicsPoint[] = [
+  { month: "Mar", newCustomers: 310, marketingSpend: 1240, salesSpend: 520, cac: 5677, ltv: 21800, churnRate: 3.4, arpu: 890 },
+  { month: "Nis", newCustomers: 336, marketingSpend: 1380, salesSpend: 560, cac: 5774, ltv: 22400, churnRate: 3.3, arpu: 905 },
+  { month: "May", newCustomers: 352, marketingSpend: 1510, salesSpend: 610, cac: 6023, ltv: 22900, churnRate: 3.2, arpu: 918 },
+  { month: "Haz", newCustomers: 361, marketingSpend: 1660, salesSpend: 650, cac: 6399, ltv: 23100, churnRate: 3.3, arpu: 926 },
+  { month: "Tem", newCustomers: 372, marketingSpend: 1790, salesSpend: 690, cac: 6667, ltv: 22600, churnRate: 3.6, arpu: 934 },
+  { month: "Ağu", newCustomers: 384, marketingSpend: 1960, salesSpend: 730, cac: 7005, ltv: 21900, churnRate: 3.9, arpu: 941 },
+];
+
+export const cacDetail = {
+  paybackMonths: 8.4,
+  targetPaybackMonths: 6,
+  blendedCac: 7005,
+  paidCac: 9120,
+  organicCac: 2480,
+  byChannel: [
+    { channel: "Ücretli arama", spend: 820, newCustomers: 78, cac: 10513, share: 0.2 },
+    { channel: "Sosyal medya", spend: 640, newCustomers: 66, cac: 9697, share: 0.17 },
+    { channel: "Satış ekibi (outbound)", spend: 730, newCustomers: 61, cac: 11967, share: 0.16 },
+    { channel: "Organik / SEO", spend: 240, newCustomers: 104, cac: 2308, share: 0.27 },
+    { channel: "Referans programı", spend: 260, newCustomers: 75, cac: 3467, share: 0.2 },
+  ],
+  funnel: [
+    { stage: "Ziyaretçi", count: 148000 },
+    { stage: "Kayıt (lead)", count: 9200 },
+    { stage: "Deneme", count: 2340 },
+    { stage: "Ücretli müşteri", count: 384 },
+  ],
+};
+
+export const ltvDetail = {
+  currentLtv: 21900,
+  previousLtv: 22600,
+  grossMarginRate: 0.72,
+  averageLifetimeMonths: 25.6,
+  netRevenueRetention: 1.06,
+  logoRetention: 0.88,
+  cohorts: [
+    { cohort: "2025 Q3", month12Retention: 0.74, ltv: 24100 },
+    { cohort: "2025 Q4", month12Retention: 0.71, ltv: 23200 },
+    { cohort: "2026 Q1", month12Retention: 0.69, ltv: 22400 },
+    { cohort: "2026 Q2", month12Retention: 0.66, ltv: 21500 },
+  ],
+  bySegment: [
+    { segment: "Kurumsal", ltv: 46800, cac: 14200, churnRate: 1.8 },
+    { segment: "Orta ölçek", ltv: 24600, cac: 8100, churnRate: 3.1 },
+    { segment: "KOBİ", ltv: 12900, cac: 4900, churnRate: 5.4 },
+  ],
+};
+
+export const currentUnitEconomics = unitEconomics[unitEconomics.length - 1] as UnitEconomicsPoint;
+export const previousUnitEconomics = unitEconomics[unitEconomics.length - 2] as UnitEconomicsPoint;
