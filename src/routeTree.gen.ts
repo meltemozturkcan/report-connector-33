@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ButceRouteImport } from './routes/butce'
+import { Route as FinansmanRouteImport } from './routes/finansman'
+import { Route as KarlilikRouteImport } from './routes/karlilik'
+import { Route as NakitRouteImport } from './routes/nakit'
+import { Route as SatisRouteImport } from './routes/satis'
+import { Route as TahminRouteImport } from './routes/tahmin'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ButceRoute = ButceRouteImport.update({
+  id: '/butce',
+  path: '/butce',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinansmanRoute = FinansmanRouteImport.update({
+  id: '/finansman',
+  path: '/finansman',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KarlilikRoute = KarlilikRouteImport.update({
+  id: '/karlilik',
+  path: '/karlilik',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NakitRoute = NakitRouteImport.update({
+  id: '/nakit',
+  path: '/nakit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SatisRoute = SatisRouteImport.update({
+  id: '/satis',
+  path: '/satis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TahminRoute = TahminRouteImport.update({
+  id: '/tahmin',
+  path: '/tahmin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/butce': typeof ButceRoute
+  '/finansman': typeof FinansmanRoute
+  '/karlilik': typeof KarlilikRoute
+  '/nakit': typeof NakitRoute
+  '/satis': typeof SatisRoute
+  '/tahmin': typeof TahminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/butce': typeof ButceRoute
+  '/finansman': typeof FinansmanRoute
+  '/karlilik': typeof KarlilikRoute
+  '/nakit': typeof NakitRoute
+  '/satis': typeof SatisRoute
+  '/tahmin': typeof TahminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/butce': typeof ButceRoute
+  '/finansman': typeof FinansmanRoute
+  '/karlilik': typeof KarlilikRoute
+  '/nakit': typeof NakitRoute
+  '/satis': typeof SatisRoute
+  '/tahmin': typeof TahminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/butce'
+    | '/finansman'
+    | '/karlilik'
+    | '/nakit'
+    | '/satis'
+    | '/tahmin'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/butce'
+    | '/finansman'
+    | '/karlilik'
+    | '/nakit'
+    | '/satis'
+    | '/tahmin'
+  id:
+    | '__root__'
+    | '/'
+    | '/butce'
+    | '/finansman'
+    | '/karlilik'
+    | '/nakit'
+    | '/satis'
+    | '/tahmin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ButceRoute: typeof ButceRoute
+  FinansmanRoute: typeof FinansmanRoute
+  KarlilikRoute: typeof KarlilikRoute
+  NakitRoute: typeof NakitRoute
+  SatisRoute: typeof SatisRoute
+  TahminRoute: typeof TahminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +130,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/butce': {
+      id: '/butce'
+      path: '/butce'
+      fullPath: '/butce'
+      preLoaderRoute: typeof ButceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finansman': {
+      id: '/finansman'
+      path: '/finansman'
+      fullPath: '/finansman'
+      preLoaderRoute: typeof FinansmanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/karlilik': {
+      id: '/karlilik'
+      path: '/karlilik'
+      fullPath: '/karlilik'
+      preLoaderRoute: typeof KarlilikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nakit': {
+      id: '/nakit'
+      path: '/nakit'
+      fullPath: '/nakit'
+      preLoaderRoute: typeof NakitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/satis': {
+      id: '/satis'
+      path: '/satis'
+      fullPath: '/satis'
+      preLoaderRoute: typeof SatisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tahmin': {
+      id: '/tahmin'
+      path: '/tahmin'
+      fullPath: '/tahmin'
+      preLoaderRoute: typeof TahminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ButceRoute: ButceRoute,
+  FinansmanRoute: FinansmanRoute,
+  KarlilikRoute: KarlilikRoute,
+  NakitRoute: NakitRoute,
+  SatisRoute: SatisRoute,
+  TahminRoute: TahminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
