@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ButceRouteImport } from './routes/butce'
+import { Route as CacRouteImport } from './routes/cac'
 import { Route as FinansmanRouteImport } from './routes/finansman'
 import { Route as KarlilikRouteImport } from './routes/karlilik'
+import { Route as LtvRouteImport } from './routes/ltv'
 import { Route as NakitRouteImport } from './routes/nakit'
 import { Route as SatisRouteImport } from './routes/satis'
 import { Route as TahminRouteImport } from './routes/tahmin'
@@ -27,6 +29,11 @@ const ButceRoute = ButceRouteImport.update({
   path: '/butce',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CacRoute = CacRouteImport.update({
+  id: '/cac',
+  path: '/cac',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FinansmanRoute = FinansmanRouteImport.update({
   id: '/finansman',
   path: '/finansman',
@@ -35,6 +42,11 @@ const FinansmanRoute = FinansmanRouteImport.update({
 const KarlilikRoute = KarlilikRouteImport.update({
   id: '/karlilik',
   path: '/karlilik',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LtvRoute = LtvRouteImport.update({
+  id: '/ltv',
+  path: '/ltv',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NakitRoute = NakitRouteImport.update({
@@ -56,8 +68,10 @@ const TahminRoute = TahminRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/butce': typeof ButceRoute
+  '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
   '/karlilik': typeof KarlilikRoute
+  '/ltv': typeof LtvRoute
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
@@ -65,8 +79,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/butce': typeof ButceRoute
+  '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
   '/karlilik': typeof KarlilikRoute
+  '/ltv': typeof LtvRoute
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
@@ -75,8 +91,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/butce': typeof ButceRoute
+  '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
   '/karlilik': typeof KarlilikRoute
+  '/ltv': typeof LtvRoute
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
@@ -86,8 +104,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/butce'
+    | '/cac'
     | '/finansman'
     | '/karlilik'
+    | '/ltv'
     | '/nakit'
     | '/satis'
     | '/tahmin'
@@ -95,8 +115,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/butce'
+    | '/cac'
     | '/finansman'
     | '/karlilik'
+    | '/ltv'
     | '/nakit'
     | '/satis'
     | '/tahmin'
@@ -104,8 +126,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/butce'
+    | '/cac'
     | '/finansman'
     | '/karlilik'
+    | '/ltv'
     | '/nakit'
     | '/satis'
     | '/tahmin'
@@ -114,8 +138,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ButceRoute: typeof ButceRoute
+  CacRoute: typeof CacRoute
   FinansmanRoute: typeof FinansmanRoute
   KarlilikRoute: typeof KarlilikRoute
+  LtvRoute: typeof LtvRoute
   NakitRoute: typeof NakitRoute
   SatisRoute: typeof SatisRoute
   TahminRoute: typeof TahminRoute
@@ -137,6 +163,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ButceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cac': {
+      id: '/cac'
+      path: '/cac'
+      fullPath: '/cac'
+      preLoaderRoute: typeof CacRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/finansman': {
       id: '/finansman'
       path: '/finansman'
@@ -149,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/karlilik'
       fullPath: '/karlilik'
       preLoaderRoute: typeof KarlilikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ltv': {
+      id: '/ltv'
+      path: '/ltv'
+      fullPath: '/ltv'
+      preLoaderRoute: typeof LtvRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nakit': {
@@ -178,8 +218,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ButceRoute: ButceRoute,
+  CacRoute: CacRoute,
   FinansmanRoute: FinansmanRoute,
   KarlilikRoute: KarlilikRoute,
+  LtvRoute: LtvRoute,
   NakitRoute: NakitRoute,
   SatisRoute: SatisRoute,
   TahminRoute: TahminRoute,

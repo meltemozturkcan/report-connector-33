@@ -65,7 +65,7 @@ function CacPage() {
         <KpiCard
           label="LTV / CAC"
           value={formatRatio(ratio, 1)}
-          delta={{ text: "Hedef 3,0x", tone: "warning" }}
+          delta={{ text: "Hedef 3,0x", tone: "negative" }}
         />
         <KpiCard
           label="Yeni müşteri"
