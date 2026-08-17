@@ -82,7 +82,7 @@ function BudgetPage() {
       <Insight question="Bütçeden sapıldıysa yıl sonu tahmini ne olacak?">
         Satış bütçenin üzerinde olmasına rağmen brüt marj ve finansman gideri sapmaları net kârı
         bütçenin {formatPercent(
-          ((budgetVariance[6].budget - budgetVariance[6].actual) / budgetVariance[6].budget) * 100,
+          ((netProfitVariance.budget - netProfitVariance.actual) / netProfitVariance.budget) * 100,
         )}{" "}
         altına indirdi. Aynı marj ve faiz seviyesi devam ederse yıl sonu FAVÖK baz senaryoda{" "}
         {formatAmount(baseScenario.ebitda)}, bütçe ise{" "}
