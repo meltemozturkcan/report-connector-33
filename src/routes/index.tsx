@@ -6,14 +6,17 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
 import {
-  budgetVariance,
+  baseScenario,
   cashFlow,
+  currentMargin,
+  currentMonth,
   debt,
   forecast,
-  margins,
-  monthly,
+  inventory,
   narrative,
-  workingCapital,
+  netProfitVariance,
+  previousMonth,
+  receivables,
 } from "@/data/report";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
@@ -37,9 +40,9 @@ export const Route = createFileRoute("/")({
 });
 
 function ExecutiveSummary() {
-  const current = monthly[monthly.length - 1];
-  const previous = monthly[monthly.length - 2];
-  const netProfitBudget = budgetVariance.find((row) => row.item === "Net kâr");
+  const current = currentMonth;
+  const previous = previousMonth;
+  const netProfitBudget = netProfitVariance;
 
   return (
     <AppShell>
@@ -59,7 +62,7 @@ function ExecutiveSummary() {
         />
         <KpiCard
           label="FAVÖK marjı"
-          value={formatPercent(margins[margins.length - 1].ebitda)}
+          value={formatPercent(currentMargin.ebitda)}
           delta={{ text: "1,0 puan gerileme", tone: "negative" }}
         />
         <KpiCard
@@ -103,7 +106,7 @@ function ExecutiveSummary() {
         <p className="mt-4 border-l-2 border-primary bg-muted/60 px-4 py-3 text-sm leading-relaxed">
           Kısaca: satış arttı, kâr artmadı; kâr nakde dönmedi, işletme sermayesinde bağlandı; nakit
           açığı borçla kapandı, geri ödeme kapasitesi zayıfladı. Bütçe sapması yıl sonu FAVÖK
-          tahminini {formatAmount(forecast.budgetFullYear.ebitda - forecast.scenarios[1].ebitda)} bin
+          tahminini {formatAmount(forecast.budgetFullYear.ebitda - baseScenario.ebitda)} bin
           TL aşağı çekiyor.
         </p>
       </Section>
@@ -128,16 +131,16 @@ function ExecutiveSummary() {
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { label: "Net satış", value: formatAmount(current.sales) },
-            { label: "Brüt kâr marjı", value: formatPercent(margins[margins.length - 1].gross) },
+            { label: "Brüt kâr marjı", value: formatPercent(currentMargin.gross) },
             { label: "FAVÖK", value: formatAmount(current.ebitda) },
             {
               label: "Net kâr / bütçe",
-              value: `${formatAmount(netProfitBudget?.actual ?? 0)} / ${formatAmount(netProfitBudget?.budget ?? 0)}`,
+              value: `${formatAmount(netProfitBudget.actual)} / ${formatAmount(netProfitBudget.budget)}`,
             },
             { label: "Dönem sonu nakit", value: formatAmount(cashFlow.closing) },
             { label: "Net borç", value: formatAmount(debt.net) },
-            { label: "Alacak gün sayısı", value: `${workingCapital[0].days} gün` },
-            { label: "Stok gün sayısı", value: `${workingCapital[1].days} gün` },
+            { label: "Alacak gün sayısı", value: `${receivables.days} gün` },
+            { label: "Stok gün sayısı", value: `${inventory.days} gün` },
             { label: "DSCR", value: formatRatio(debt.dscr, 2) },
           ].map((item) => (
             <div key={item.label} className="flex justify-between border-b border-border/60 py-1.5">

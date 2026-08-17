@@ -19,7 +19,14 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
-import { margins, monthly, salesBreakdown } from "@/data/report";
+import {
+  currentMargin,
+  currentMonth,
+  monthly,
+  previousMargin,
+  previousMonth,
+  salesBreakdown,
+} from "@/data/report";
 import { changePercent, formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/satis")({
@@ -41,8 +48,8 @@ export const Route = createFileRoute("/satis")({
 });
 
 function SalesPage() {
-  const current = monthly[monthly.length - 1];
-  const previous = monthly[monthly.length - 2];
+  const current = currentMonth;
+  const previous = previousMonth;
   const effect = salesBreakdown.volumePriceEffect;
 
   return (
@@ -158,8 +165,8 @@ function SalesPage() {
       <Insight question="Satış arttıysa kârlılığa ne oldu?">
         Satış geçen aya göre {formatPercent(changePercent(current.sales, previous.sales))} arttı, ancak
         büyümenin büyük bölümü fiyat artışından geliyor ve hammadde maliyeti daha hızlı yükseldi. Brüt
-        marj {formatPercent(margins[margins.length - 2].gross)} seviyesinden{" "}
-        {formatPercent(margins[margins.length - 1].gross)} seviyesine geriledi; FAVÖK tutarı ciro
+        marj {formatPercent(previousMargin.gross)} seviyesinden{" "}
+        {formatPercent(currentMargin.gross)} seviyesine geriledi; FAVÖK tutarı ciro
         büyümesine rağmen azaldı. Ayrıntı için kârlılık sayfasına bakınız.
       </Insight>
     </AppShell>

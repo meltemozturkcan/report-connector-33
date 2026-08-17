@@ -6,7 +6,13 @@ import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
-import { budgetVariance, forecast, varianceReasons } from "@/data/report";
+import {
+  baseScenario,
+  budgetVariance,
+  forecast,
+  netProfitVariance,
+  varianceReasons,
+} from "@/data/report";
 import { formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/butce")({
@@ -79,9 +85,9 @@ function BudgetPage() {
           ((budgetVariance[6].budget - budgetVariance[6].actual) / budgetVariance[6].budget) * 100,
         )}{" "}
         altına indirdi. Aynı marj ve faiz seviyesi devam ederse yıl sonu FAVÖK baz senaryoda{" "}
-        {formatAmount(forecast.scenarios[1].ebitda)}, bütçe ise{" "}
+        {formatAmount(baseScenario.ebitda)}, bütçe ise{" "}
         {formatAmount(forecast.budgetFullYear.ebitda)} seviyesindedir; aradaki fark{" "}
-        {formatAmount(forecast.budgetFullYear.ebitda - forecast.scenarios[1].ebitda)}.
+        {formatAmount(forecast.budgetFullYear.ebitda - baseScenario.ebitda)}.
       </Insight>
     </AppShell>
   );
