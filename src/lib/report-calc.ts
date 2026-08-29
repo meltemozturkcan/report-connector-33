@@ -71,8 +71,8 @@ export function computeReport(input: ReportInput) {
 
   const hasReportData = monthly.length > 0;
   const last = monthly.length - 1;
-  const currentMonth = monthly[last];
-  const previousMonth = monthly[last - 1] ?? currentMonth;
+  const currentMonth = monthly[last] as MonthlyPoint;
+  const previousMonth = (monthly[last - 1] ?? currentMonth) as MonthlyPoint;
   const currentRaw = input.monthly[last];
   const previousRaw = input.monthly[last - 1] ?? currentRaw;
 
@@ -82,8 +82,8 @@ export function computeReport(input: ReportInput) {
     ebitda: round(pct(m.ebitda, m.sales)),
     net: round(pct(m.netProfit, m.sales)),
   }));
-  const currentMargin = margins[last];
-  const previousMargin = margins[last - 1] ?? currentMargin;
+  const currentMargin = margins[last] as MarginPoint;
+  const previousMargin = (margins[last - 1] ?? currentMargin) as MarginPoint;
 
   // --- Bütçe – gerçekleşen sapmaları (cari ay) ---
   const budgetVariance: VarianceRow[] = currentRaw
@@ -187,7 +187,11 @@ export function computeReport(input: ReportInput) {
       ]
     : [];
 
-  const [receivables, inventory, payables] = workingCapital;
+  const [receivables, inventory, payables] = workingCapital as [
+    WorkingCapitalRow,
+    WorkingCapitalRow,
+    WorkingCapitalRow,
+  ];
 
   const cashConversionCycle = input.monthly.map((m) => ({
     month: m.month,
@@ -300,8 +304,8 @@ export function computeReport(input: ReportInput) {
     };
   });
   const uLast = unitEconomics.length - 1;
-  const currentUnitEconomics = unitEconomics[uLast];
-  const previousUnitEconomics = unitEconomics[uLast - 1] ?? currentUnitEconomics;
+  const currentUnitEconomics = unitEconomics[uLast] as (typeof unitEconomics)[number];
+  const previousUnitEconomics = (unitEconomics[uLast - 1] ?? currentUnitEconomics) as (typeof unitEconomics)[number];
 
   const channelSpend = input.cac.byChannel.reduce((s, c) => s + c.spend, 0);
   const cacDetail = {

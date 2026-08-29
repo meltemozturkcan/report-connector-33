@@ -1,20 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Insight } from "@/components/report/Insight";
-import {
-  cacDetail,
-  currentUnitEconomics,
-  hasReportData,
-  ltvDetail,
-  previousUnitEconomics,
-  unitEconomics,
-} from "@/data/report";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/cac")({
@@ -37,6 +30,15 @@ export const Route = createFileRoute("/cac")({
 });
 
 function CacPage() {
+  const {
+    cacDetail,
+    currentUnitEconomics,
+    hasReportData,
+    ltvDetail,
+    previousUnitEconomics,
+    unitEconomics,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>

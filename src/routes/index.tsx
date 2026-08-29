@@ -1,24 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { KpiCard } from "@/components/report/KpiCard";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
-import {
-  baseScenario,
-  cashFlow,
-  currentMargin,
-  currentMonth,
-  debt,
-  forecast,
-  hasReportData,
-  inventory,
-  narrative,
-  netProfitVariance,
-  previousMonth,
-  receivables,
-} from "@/data/report";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -41,6 +28,21 @@ export const Route = createFileRoute("/")({
 });
 
 function ExecutiveSummary() {
+  const {
+    baseScenario,
+    cashFlow,
+    currentMargin,
+    currentMonth,
+    debt,
+    forecast,
+    hasReportData,
+    inventory,
+    narrative,
+    netProfitVariance,
+    previousMonth,
+    receivables,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>

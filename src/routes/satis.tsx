@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { ComposedChart } from "recharts";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
@@ -19,15 +20,6 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
-import {
-  currentMargin,
-  currentMonth,
-  hasReportData,
-  monthly,
-  previousMargin,
-  previousMonth,
-  salesBreakdown,
-} from "@/data/report";
 import { changePercent, formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/satis")({
@@ -49,6 +41,16 @@ export const Route = createFileRoute("/satis")({
 });
 
 function SalesPage() {
+  const {
+    currentMargin,
+    currentMonth,
+    hasReportData,
+    monthly,
+    previousMargin,
+    previousMonth,
+    salesBreakdown,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>

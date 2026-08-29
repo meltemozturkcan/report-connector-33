@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
@@ -8,16 +9,6 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
-import {
-  cashConversionCycle,
-  cashFlow,
-  currentMonth,
-  hasReportData,
-  inventory,
-  payables,
-  receivables,
-  workingCapital,
-} from "@/data/report";
 import { formatAmount } from "@/lib/format";
 
 export const Route = createFileRoute("/nakit")({
@@ -36,6 +27,17 @@ export const Route = createFileRoute("/nakit")({
 });
 
 function CashPage() {
+  const {
+    cashConversionCycle,
+    cashFlow,
+    currentMonth,
+    hasReportData,
+    inventory,
+    payables,
+    receivables,
+    workingCapital,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>
