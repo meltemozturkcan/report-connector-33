@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { AppShell } from "@/components/report/AppShell";
+import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
@@ -9,6 +9,7 @@ import { DataTable } from "@/components/report/DataTable";
 import { Insight } from "@/components/report/Insight";
 import {
   currentUnitEconomics,
+  hasReportData,
   ltvDetail,
   previousUnitEconomics,
   unitEconomics,
@@ -35,6 +36,14 @@ export const Route = createFileRoute("/ltv")({
 });
 
 function LtvPage() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   const current = currentUnitEconomics;
   const previous = previousUnitEconomics;
   const ratio = ltvDetail.currentLtv / current.cac;

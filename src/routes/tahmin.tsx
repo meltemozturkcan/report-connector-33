@@ -27,6 +27,14 @@ export const Route = createFileRoute("/tahmin")({
 });
 
 function ForecastPage() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   const ebitdaGap = baseScenario.ebitda - forecast.budgetFullYear.ebitda;
 
   return (
