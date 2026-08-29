@@ -131,7 +131,9 @@ function DataEntryPage() {
           <TabsTrigger value="finansman">Borç ve CAPEX</TabsTrigger>
           <TabsTrigger value="tahmin">Yıl sonu tahmini</TabsTrigger>
           <TabsTrigger value="birim">CAC / LTV</TabsTrigger>
+          <TabsTrigger value="fizibilite">Fizibilite / BEP</TabsTrigger>
           <TabsTrigger value="yorum">Yorum ve aksiyon</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="genel" className="space-y-4 border border-border bg-card p-4">
