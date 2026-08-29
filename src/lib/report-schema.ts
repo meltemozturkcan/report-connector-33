@@ -1,0 +1,169 @@
+import { z } from "zod";
+
+/**
+ * Rapor giriş modeli.
+ * Kullanıcı yalnızca "ham" verileri girer; oranlar, sapmalar, marjlar ve
+ * senaryolar report-calc.ts içindeki hesaplama metotlarıyla türetilir.
+ * Para tutarları bin TL, oranlar yüzde (%) olarak girilir.
+ */
+
+const num = z.coerce.number().finite();
+const text = z.string().trim();
+
+export const monthlyInputSchema = z.object({
+  month: text.min(1, "Ay adı gerekli"),
+  sales: num,
+  budgetSales: num,
+  cogs: num,
+  budgetCogs: num,
+  opex: num,
+  budgetOpex: num,
+  depreciation: num,
+  financialExpense: num,
+  tax: num,
+  operatingCash: num,
+  investingCash: num,
+  financingCash: num,
+  cash: num,
+  receivables: num,
+  inventory: num,
+  payables: num,
+  debt: num,
+});
+export type MonthlyInput = z.infer<typeof monthlyInputSchema>;
+
+export const unitEconomicsInputSchema = z.object({
+  month: text.min(1, "Ay adı gerekli"),
+  newCustomers: num,
+  marketingSpend: num,
+  salesSpend: num,
+  arpu: num,
+  churnRate: num,
+  grossMarginRate: num,
+});
+export type UnitEconomicsInput = z.infer<typeof unitEconomicsInputSchema>;
+
+export const reportInputSchema = z.object({
+  meta: z.object({
+    company: text.default(""),
+    period: text.default(""),
+    previousPeriod: text.default(""),
+    currencyNote: text.default("Tutarlar bin TL"),
+  }),
+  monthly: z.array(monthlyInputSchema).default([]),
+  sales: z.object({
+    byProduct: z
+      .array(z.object({ name: text, current: num, previous: num, budget: num }))
+      .default([]),
+    byRegion: z.array(z.object({ name: text, current: num, previous: num })).default([]),
+    volumeEffect: num.default(0),
+    priceEffect: num.default(0),
+    mixEffect: num.default(0),
+    topCustomerShare: num.default(0),
+  }),
+  budget: z.object({
+    reasons: z.array(z.object({ item: text, reason: text })).default([]),
+  }),
+  workingCapital: z.object({
+    targetReceivableDays: num.default(0),
+    targetInventoryDays: num.default(0),
+    targetPayableDays: num.default(0),
+  }),
+  financing: z.object({
+    shortTerm: num.default(0),
+    longTerm: num.default(0),
+    averageRate: num.default(0),
+    annualDebtService: num.default(0),
+    lines: z.array(z.object({ bank: text, limit: num, used: num })).default([]),
+    maturities: z.array(z.object({ period: text, amount: num })).default([]),
+  }),
+  capex: z.object({
+    annualBudget: num.default(0),
+    ytdBudget: num.default(0),
+    monthActual: num.default(0),
+    projects: z
+      .array(z.object({ name: text, budget: num, actual: num, status: text.default("Devam ediyor") }))
+      .default([]),
+  }),
+  forecast: z.object({
+    budgetFullYearSales: num.default(0),
+    budgetFullYearEbitda: num.default(0),
+    budgetFullYearNetCash: num.default(0),
+    remainingMonths: num.default(0),
+    worstCaseDelta: num.default(-10),
+    bestCaseDelta: num.default(10),
+    drivers: z.array(z.object({ name: text, impact: text, note: text })).default([]),
+  }),
+  unitEconomics: z.array(unitEconomicsInputSchema).default([]),
+  cac: z.object({
+    targetPaybackMonths: num.default(12),
+    byChannel: z.array(z.object({ channel: text, spend: num, newCustomers: num })).default([]),
+    funnel: z.array(z.object({ stage: text, count: num })).default([]),
+  }),
+  ltv: z.object({
+    netRevenueRetention: num.default(0),
+    logoRetention: num.default(0),
+    cohorts: z.array(z.object({ cohort: text, month12Retention: num, ltv: num })).default([]),
+    bySegment: z
+      .array(z.object({ segment: text, arpu: num, churnRate: num, grossMarginRate: num, cac: num }))
+      .default([]),
+  }),
+  narrative: z.object({
+    notes: z.array(z.object({ text: text })).default([]),
+    actions: z.array(z.object({ action: text, owner: text, due: text })).default([]),
+  }),
+});
+
+export type ReportInput = z.infer<typeof reportInputSchema>;
+
+export const emptyReportInput: ReportInput = reportInputSchema.parse({
+  meta: {},
+  monthly: [],
+  sales: {},
+  budget: {},
+  workingCapital: {},
+  financing: {},
+  capex: {},
+  forecast: {},
+  unitEconomics: [],
+  cac: {},
+  ltv: {},
+  narrative: {},
+});
+
+export const emptyMonthlyRow: MonthlyInput = {
+  month: "",
+  sales: 0,
+  budgetSales: 0,
+  cogs: 0,
+  budgetCogs: 0,
+  opex: 0,
+  budgetOpex: 0,
+  depreciation: 0,
+  financialExpense: 0,
+  tax: 0,
+  operatingCash: 0,
+  investingCash: 0,
+  financingCash: 0,
+  cash: 0,
+  receivables: 0,
+  inventory: 0,
+  payables: 0,
+  debt: 0,
+};
+
+export const emptyUnitEconomicsRow: UnitEconomicsInput = {
+  month: "",
+  newCustomers: 0,
+  marketingSpend: 0,
+  salesSpend: 0,
+  arpu: 0,
+  churnRate: 0,
+  grossMarginRate: 0,
+};
+
+/** Kaydedilmiş ham JSON'u güvenli biçimde giriş modeline dönüştürür. */
+export function parseReportInput(value: unknown): ReportInput {
+  const result = reportInputSchema.safeParse(value ?? {});
+  return result.success ? result.data : emptyReportInput;
+}
