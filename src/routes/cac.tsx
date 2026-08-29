@@ -141,14 +141,14 @@ function CacPage() {
               { header: "Harcama (bin TL)", align: "right", cell: (row) => formatAmount(row.spend) },
               { header: "Yeni müşteri", align: "right", cell: (row) => formatAmount(row.newCustomers) },
               { header: "CAC (TL)", align: "right", cell: (row) => formatAmount(row.cac) },
-              { header: "Payı", align: "right", cell: (row) => formatPercent(row.share * 100, 0) },
+              { header: "Payı", align: "right", cell: (row) => formatPercent(row.share, 0) },
             ]}
           />
         </div>
         <Insight question="Nerede bağlandı?">
-          Yeni müşterilerin %47'si organik ve referans kanalından, toplam harcamanın yalnızca %19'u ile
-          geliyor. Ücretli kanalların CAC'i ortalamanın {formatRatio(cacDetail.paidCac / cacDetail.blendedCac, 1)} üzerinde;
-          bütçenin ücretli taraftan referans programına kaydırılması blended CAC'i doğrudan aşağı çeker.
+          Toplam kazanım harcaması {formatAmount(cacDetail.totalSpend)} bin TL; blended CAC{" "}
+          {formatAmount(cacDetail.blendedCac)} TL. Kanal tablosundaki CAC'i ortalamanın üzerinde olan
+          kanallardan, altında kalan kanallara bütçe kaydırmak blended CAC'i doğrudan aşağı çeker.
         </Insight>
       </Section>
 
