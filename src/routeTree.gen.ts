@@ -19,6 +19,7 @@ import { Route as LtvRouteImport } from './routes/ltv'
 import { Route as NakitRouteImport } from './routes/nakit'
 import { Route as SatisRouteImport } from './routes/satis'
 import { Route as TahminRouteImport } from './routes/tahmin'
+import { Route as VeriGirisiRouteImport } from './routes/veri-girisi'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,11 @@ const TahminRoute = TahminRouteImport.update({
   path: '/tahmin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VeriGirisiRoute = VeriGirisiRouteImport.update({
+  id: '/veri-girisi',
+  path: '/veri-girisi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
+  '/veri-girisi': typeof VeriGirisiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
+  '/veri-girisi': typeof VeriGirisiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
+  '/veri-girisi': typeof VeriGirisiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/nakit'
     | '/satis'
     | '/tahmin'
+    | '/veri-girisi'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/nakit'
     | '/satis'
     | '/tahmin'
+    | '/veri-girisi'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/nakit'
     | '/satis'
     | '/tahmin'
+    | '/veri-girisi'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   NakitRoute: typeof NakitRoute
   SatisRoute: typeof SatisRoute
   TahminRoute: typeof TahminRoute
+  VeriGirisiRoute: typeof VeriGirisiRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TahminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/veri-girisi': {
+      id: '/veri-girisi'
+      path: '/veri-girisi'
+      fullPath: '/veri-girisi'
+      preLoaderRoute: typeof VeriGirisiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   NakitRoute: NakitRoute,
   SatisRoute: SatisRoute,
   TahminRoute: TahminRoute,
+  VeriGirisiRoute: VeriGirisiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
