@@ -60,13 +60,22 @@ function CashPage() {
         <KpiCard
           label="Faaliyetlerden nakit"
           value={formatAmount(cashFlow.operating)}
-          delta={{ text: "Negatif", tone: "negative" }}
+          delta={{
+            text: cashFlow.operating >= 0 ? "Pozitif" : "Negatif",
+            tone: cashFlow.operating >= 0 ? "positive" : "negative",
+          }}
         />
         <KpiCard label="Dönem sonu nakit" value={formatAmount(cashFlow.closing)} />
         <KpiCard
           label="Nakit dönüşüm döngüsü"
           value={`${cycle} gün`}
-          delta={{ text: "18 gün uzadı", tone: "negative" }}
+          delta={{
+            text: `Hedef ${receivables.targetDays + inventory.targetDays - payables.targetDays} gün`,
+            tone:
+              cycle <= receivables.targetDays + inventory.targetDays - payables.targetDays
+                ? "positive"
+                : "negative",
+          }}
         />
       </div>
 

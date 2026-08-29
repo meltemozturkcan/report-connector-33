@@ -71,12 +71,15 @@ function CacPage() {
         <KpiCard
           label="CAC geri ödeme süresi"
           value={`${formatAmount(cacDetail.paybackMonths, 1)} ay`}
-          delta={{ text: `Hedef ${cacDetail.targetPaybackMonths} ay`, tone: "negative" }}
+          delta={{
+            text: `Hedef ${cacDetail.targetPaybackMonths} ay`,
+            tone: cacDetail.paybackMonths <= cacDetail.targetPaybackMonths ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="LTV / CAC"
           value={formatRatio(ratio, 1)}
-          delta={{ text: "Hedef 3,0x", tone: "negative" }}
+          delta={{ text: `Hedef 3,0x`, tone: ratio >= 3 ? "positive" : "negative" }}
         />
         <KpiCard
           label="Yeni müşteri"
@@ -172,8 +175,9 @@ function CacPage() {
           ]}
         />
         <Insight question="Bundan sonra ne yapacağız?">
-          Deneme → ücretli müşteri dönüşümü %16,4. Bu oran 2 puan iyileşirse aynı harcama ile CAC yaklaşık
-          %11 düşer ve geri ödeme süresi hedeflenen {cacDetail.targetPaybackMonths} aya yaklaşır.
+          Hunideki her aşamanın dönüşüm oranı doğrudan CAC'i belirler: son aşamadaki dönüşüm bir puan
+          iyileştiğinde aynı harcama daha fazla müşteri getirir ve geri ödeme süresi hedeflenen{" "}
+          {cacDetail.targetPaybackMonths} aya yaklaşır.
         </Insight>
       </Section>
     </AppShell>

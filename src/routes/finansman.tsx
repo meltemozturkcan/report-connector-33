@@ -56,18 +56,27 @@ function FinancingPage() {
         <KpiCard
           label="Toplam finansal borç"
           value={formatAmount(debt.total)}
-          delta={{ text: `${formatAmount(debt.total - debt.previous)} artış`, tone: "negative" }}
+          delta={{
+            text: `${formatAmount(debt.total - debt.previous)} değişim`,
+            tone: debt.total > debt.previous ? "negative" : "positive",
+          }}
         />
         <KpiCard label="Net borç" value={formatAmount(debt.net)} note="Finansal borç - nakit" />
         <KpiCard
           label="Net borç / FAVÖK"
           value={formatRatio(debt.netDebtToEbitda, 1)}
-          delta={{ text: "Eşik 3,0x aşıldı", tone: "negative" }}
+          delta={{
+            text: debt.netDebtToEbitda > 3 ? "3,0x eşiği aşıldı" : "3,0x eşiğinin altında",
+            tone: debt.netDebtToEbitda > 3 ? "negative" : "positive",
+          }}
         />
         <KpiCard
           label="DSCR"
           value={formatRatio(debt.dscr, 2)}
-          delta={{ text: "Hedef 1,30", tone: "negative" }}
+          delta={{
+            text: "Hedef 1,30",
+            tone: debt.dscr >= 1.3 ? "positive" : "negative",
+          }}
         />
       </div>
 
