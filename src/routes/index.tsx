@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { AppShell } from "@/components/report/AppShell";
+import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { KpiCard } from "@/components/report/KpiCard";
 import { Section } from "@/components/report/Section";
@@ -12,6 +12,7 @@ import {
   currentMonth,
   debt,
   forecast,
+  hasReportData,
   inventory,
   narrative,
   netProfitVariance,
@@ -40,6 +41,14 @@ export const Route = createFileRoute("/")({
 });
 
 function ExecutiveSummary() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   const current = currentMonth;
   const previous = previousMonth;
   const netProfitBudget = netProfitVariance;

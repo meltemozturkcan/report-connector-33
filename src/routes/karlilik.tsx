@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { AppShell } from "@/components/report/AppShell";
+import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
@@ -12,6 +12,7 @@ import {
   cashFlow,
   currentMargin,
   currentMonth,
+  hasReportData,
   margins,
   previousMargin,
   previousMonth,
@@ -38,6 +39,14 @@ export const Route = createFileRoute("/karlilik")({
 });
 
 function ProfitabilityPage() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   const bridge = [
     { label: "Önceki ay FAVÖK marjı", value: previousMargin.ebitda },
     { label: "Hammadde maliyeti etkisi", value: -1.4 },

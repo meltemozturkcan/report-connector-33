@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { ComposedChart } from "recharts";
 
-import { AppShell } from "@/components/report/AppShell";
+import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
@@ -22,6 +22,7 @@ import { Insight } from "@/components/report/Insight";
 import {
   currentMargin,
   currentMonth,
+  hasReportData,
   monthly,
   previousMargin,
   previousMonth,
@@ -48,6 +49,14 @@ export const Route = createFileRoute("/satis")({
 });
 
 function SalesPage() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   const current = currentMonth;
   const previous = previousMonth;
   const effect = salesBreakdown.volumePriceEffect;

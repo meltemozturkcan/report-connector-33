@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { AppShell } from "@/components/report/AppShell";
+import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
@@ -12,6 +12,7 @@ import {
   cashConversionCycle,
   cashFlow,
   currentMonth,
+  hasReportData,
   inventory,
   payables,
   receivables,
@@ -35,6 +36,14 @@ export const Route = createFileRoute("/nakit")({
 });
 
 function CashPage() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   const cycle = receivables.days + inventory.days - payables.days;
 
   return (
