@@ -5,13 +5,18 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { NumberField, RepeatTable, TextField } from "@/components/entry/fields";
+import { TierPeriodGrid } from "@/components/entry/TierPeriodGrid";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useReportInput } from "@/hooks/useReport";
+import { computeFeasibility } from "@/lib/feasibility-calc";
 import { computeReport } from "@/lib/report-calc";
 import {
+  emptyFixedItemRow,
   emptyMonthlyRow,
+  emptyOtherRevenueRow,
+  emptyTierRow,
   emptyUnitEconomicsRow,
   reportInputSchema,
   type ReportInput,
@@ -51,6 +56,7 @@ function DataEntryPage() {
   }, [input, isLoading, loaded]);
 
   const preview = computeReport(draft);
+  const feasibilityPreview = computeFeasibility(draft.feasibility);
 
   const patch = <K extends keyof ReportInput>(key: K, value: ReportInput[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
