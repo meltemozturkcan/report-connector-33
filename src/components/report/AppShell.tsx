@@ -17,6 +17,7 @@ const navItems = [
   { to: "/tahmin", label: "Yıl Sonu Tahmini" },
   { to: "/cac", label: "CAC" },
   { to: "/ltv", label: "LTV" },
+  { to: "/fizibilite", label: "Fizibilite / BEP" },
   { to: "/veri-girisi", label: "Veri Girişi" },
 ] as const;
 

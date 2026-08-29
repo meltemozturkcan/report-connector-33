@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { computeFeasibility, type FeasibilityModel } from "@/lib/feasibility-calc";
 import { computeReport, type ReportModel } from "@/lib/report-calc";
 import { emptyReportInput, parseReportInput, type ReportInput } from "@/lib/report-schema";
 
@@ -59,5 +60,15 @@ export function useReportInput() {
 export function useReport(): ReportModel & { isLoading: boolean } {
   const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
   const model = useMemo(() => computeReport(query.data ?? emptyReportInput), [query.data]);
+  return { ...model, isLoading: query.isLoading };
+}
+
+/** Fizibilite / BEP modeli. Fizibilite sayfası bunu kullanır. */
+export function useFeasibility(): FeasibilityModel & { isLoading: boolean } {
+  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
+  const model = useMemo(
+    () => computeFeasibility((query.data ?? emptyReportInput).feasibility),
+    [query.data],
+  );
   return { ...model, isLoading: query.isLoading };
 }
