@@ -28,7 +28,7 @@ async function saveReportInput(input: ReportInput) {
   const { error } = await supabase
     .from("report_workbook")
     .upsert(
-      { user_id: auth.user.id, data: input as unknown as Record<string, unknown> },
+      { user_id: auth.user.id, data: input as never },
       { onConflict: "user_id" },
     );
 
