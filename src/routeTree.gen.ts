@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ButceRouteImport } from './routes/butce'
 import { Route as CacRouteImport } from './routes/cac'
 import { Route as FinansmanRouteImport } from './routes/finansman'
+import { Route as FizibiliteRouteImport } from './routes/fizibilite'
 import { Route as KarlilikRouteImport } from './routes/karlilik'
 import { Route as LtvRouteImport } from './routes/ltv'
 import { Route as NakitRouteImport } from './routes/nakit'
@@ -44,6 +45,11 @@ const CacRoute = CacRouteImport.update({
 const FinansmanRoute = FinansmanRouteImport.update({
   id: '/finansman',
   path: '/finansman',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FizibiliteRoute = FizibiliteRouteImport.update({
+  id: '/fizibilite',
+  path: '/fizibilite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KarlilikRoute = KarlilikRouteImport.update({
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/butce': typeof ButceRoute
   '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
+  '/fizibilite': typeof FizibiliteRoute
   '/karlilik': typeof KarlilikRoute
   '/ltv': typeof LtvRoute
   '/nakit': typeof NakitRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/butce': typeof ButceRoute
   '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
+  '/fizibilite': typeof FizibiliteRoute
   '/karlilik': typeof KarlilikRoute
   '/ltv': typeof LtvRoute
   '/nakit': typeof NakitRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/butce': typeof ButceRoute
   '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
+  '/fizibilite': typeof FizibiliteRoute
   '/karlilik': typeof KarlilikRoute
   '/ltv': typeof LtvRoute
   '/nakit': typeof NakitRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/butce'
     | '/cac'
     | '/finansman'
+    | '/fizibilite'
     | '/karlilik'
     | '/ltv'
     | '/nakit'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/butce'
     | '/cac'
     | '/finansman'
+    | '/fizibilite'
     | '/karlilik'
     | '/ltv'
     | '/nakit'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/butce'
     | '/cac'
     | '/finansman'
+    | '/fizibilite'
     | '/karlilik'
     | '/ltv'
     | '/nakit'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   ButceRoute: typeof ButceRoute
   CacRoute: typeof CacRoute
   FinansmanRoute: typeof FinansmanRoute
+  FizibiliteRoute: typeof FizibiliteRoute
   KarlilikRoute: typeof KarlilikRoute
   LtvRoute: typeof LtvRoute
   NakitRoute: typeof NakitRoute
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/finansman'
       fullPath: '/finansman'
       preLoaderRoute: typeof FinansmanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fizibilite': {
+      id: '/fizibilite'
+      path: '/fizibilite'
+      fullPath: '/fizibilite'
+      preLoaderRoute: typeof FizibiliteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/karlilik': {
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   ButceRoute: ButceRoute,
   CacRoute: CacRoute,
   FinansmanRoute: FinansmanRoute,
+  FizibiliteRoute: FizibiliteRoute,
   KarlilikRoute: KarlilikRoute,
   LtvRoute: LtvRoute,
   NakitRoute: NakitRoute,

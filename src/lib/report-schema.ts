@@ -108,6 +108,64 @@ export const reportInputSchema = z.object({
       .array(z.object({ segment: text, arpu: num, churnRate: num, grossMarginRate: num, cac: num }))
       .default([]),
   }),
+  /**
+   * Fizibilite / başa baş (BEP) modülü.
+   * Tutarlar TL (bin TL değil), oranlar yüzde olarak girilir.
+   */
+  feasibility: z.object({
+    method: z.enum(["blended", "weighted"]).default("weighted"),
+    currencyNote: text.default("Tutarlar TL, oranlar %"),
+    tiers: z.array(z.object({ name: text, unitPrice: num })).default([]),
+    periods: z
+      .array(
+        z.object({
+          period: text,
+          counts: z.array(num).default([]),
+          otherRevenue: num.default(0),
+          fixedCostOverride: num.default(0),
+        }),
+      )
+      .default([]),
+    otherRevenue: z
+      .array(z.object({ name: text, volume: num, unitPrice: num, hypothesis: text.default("") }))
+      .default([]),
+    funnel: z
+      .object({
+        monthsPerPeriod: num.default(1),
+        startingAccounts: num.default(0),
+        monthlyLeads: num.default(0),
+        demoRate: num.default(0),
+        payingRate: num.default(0),
+        monthlyChurnRate: num.default(0),
+        targetAccounts: num.default(0),
+        targetMonth: num.default(0),
+      })
+      .default({}),
+    variable: z
+      .object({
+        supportHeadcount: num.default(0),
+        annualCostPerSupportStaff: num.default(0),
+        accountsPerStaff: num.default(0),
+        annualCloudApiCost: num.default(0),
+        cloudCostPerAccount: num.default(0),
+        annualEnergyCost: num.default(0),
+        energyNote: text.default("Bulut kullanımında malzeme maliyetine dahildir"),
+        paymentCommissionRate: num.default(0),
+        annualBillingSoftwareCost: num.default(0),
+        otherVariablePerAccount: num.default(0),
+      })
+      .default({}),
+    fixed: z
+      .object({
+        equipmentInvestment: num.default(0),
+        equipmentUsefulLifeYears: num.default(5),
+        buildingInvestment: num.default(0),
+        buildingUsefulLifeYears: num.default(50),
+        annualRent: num.default(0),
+        otherItems: z.array(z.object({ name: text, amount: num })).default([]),
+      })
+      .default({}),
+  }),
   narrative: z.object({
     notes: z.array(z.object({ text: text })).default([]),
     actions: z.array(z.object({ action: text, owner: text, due: text })).default([]),
@@ -115,6 +173,7 @@ export const reportInputSchema = z.object({
 });
 
 export type ReportInput = z.infer<typeof reportInputSchema>;
+export type FeasibilityInput = ReportInput["feasibility"];
 
 export const emptyReportInput: ReportInput = reportInputSchema.parse({
   meta: {},
@@ -128,8 +187,14 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
   unitEconomics: [],
   cac: {},
   ltv: {},
+  feasibility: {},
   narrative: {},
 });
+
+export const emptyTierRow = { name: "", unitPrice: 0 };
+export const emptyOtherRevenueRow = { name: "", volume: 0, unitPrice: 0, hypothesis: "" };
+export const emptyFixedItemRow = { name: "", amount: 0 };
+
 
 export const emptyMonthlyRow: MonthlyInput = {
   month: "",
