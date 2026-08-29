@@ -32,6 +32,7 @@ function ExecutiveSummary() {
     baseScenario,
     cashFlow,
     currentMargin,
+    previousMargin,
     currentMonth,
     debt,
     forecast,
