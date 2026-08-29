@@ -68,23 +68,32 @@ function ExecutiveSummary() {
           value={formatAmount(current.sales)}
           delta={{
             text: `${formatPercent(changePercent(current.sales, previous.sales))} önceki aya göre`,
-            tone: "positive",
+            tone: current.sales >= previous.sales ? "positive" : "negative",
           }}
         />
         <KpiCard
           label="FAVÖK marjı"
           value={formatPercent(currentMargin.ebitda)}
-          delta={{ text: "1,0 puan gerileme", tone: "negative" }}
+          delta={{
+            text: `${formatAmount(currentMargin.ebitda - previousMargin.ebitda, 1)} puan`,
+            tone: currentMargin.ebitda >= previousMargin.ebitda ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="Faaliyet nakit akışı"
           value={formatAmount(cashFlow.operating)}
-          delta={{ text: "Negatife döndü", tone: "negative" }}
+          delta={{
+            text: cashFlow.operating >= 0 ? "Pozitif" : "Negatif",
+            tone: cashFlow.operating >= 0 ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="Net borç / FAVÖK"
           value={formatRatio(debt.netDebtToEbitda, 1)}
-          delta={{ text: `DSCR ${formatRatio(debt.dscr, 2)}`, tone: "negative" }}
+          delta={{
+            text: `DSCR ${formatRatio(debt.dscr, 2)}`,
+            tone: debt.netDebtToEbitda <= 3 && debt.dscr >= 1.3 ? "positive" : "negative",
+          }}
         />
       </div>
 
