@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { FileSearch } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { reportMeta } from "@/data/report";
@@ -15,7 +16,25 @@ const navItems = [
   { to: "/ltv", label: "LTV" },
 ] as const;
 
+export function EmptyState() {
+  return (
+    <div
+      role="status"
+      className="flex flex-col items-center justify-center rounded-md border border-dashed border-border bg-card px-6 py-20 text-center"
+    >
+      <FileSearch className="h-8 w-8 text-muted-foreground" aria-hidden />
+      <h2 className="mt-4 text-base font-semibold text-foreground">Henüz rapor verisi yok</h2>
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+        Bu dönem için veri girilmemiş. Rapor bölümleri, veriler eklendiğinde otomatik olarak
+        dolacaktır.
+      </p>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
+  const metaText = [reportMeta.company, reportMeta.period].filter(Boolean).join(" · ");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -23,9 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/" className="text-sm font-semibold tracking-tight text-foreground">
             Aylık Yönetim Raporu
           </Link>
-          <p className="text-xs text-muted-foreground">
-            {reportMeta.company} · {reportMeta.period}
-          </p>
+          {metaText ? <p className="text-xs text-muted-foreground">{metaText}</p> : null}
         </div>
         <nav aria-label="Rapor bölümleri" className="mx-auto max-w-6xl px-4">
           <ul className="-mb-px flex flex-wrap gap-x-5 gap-y-1 text-sm">

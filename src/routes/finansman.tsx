@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AppShell } from "@/components/report/AppShell";
+import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
@@ -8,7 +8,7 @@ import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
 import { Progress } from "@/components/ui/progress";
-import { capex, cashFlow, debt } from "@/data/report";
+import { capex, cashFlow, debt, hasReportData } from "@/data/report";
 import { formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/finansman")({
@@ -27,6 +27,14 @@ export const Route = createFileRoute("/finansman")({
 });
 
 function FinancingPage() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   const totalLimit = debt.lines.reduce((sum, line) => sum + line.limit, 0);
   const totalUsed = debt.lines.reduce((sum, line) => sum + line.used, 0);
 

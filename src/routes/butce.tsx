@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AppShell } from "@/components/report/AppShell";
+import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
@@ -10,6 +10,7 @@ import {
   baseScenario,
   budgetVariance,
   forecast,
+  hasReportData,
   netProfitVariance,
   varianceReasons,
 } from "@/data/report";
@@ -34,6 +35,14 @@ export const Route = createFileRoute("/butce")({
 });
 
 function BudgetPage() {
+  if (!hasReportData) {
+    return (
+      <AppShell>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       <PageHeader
