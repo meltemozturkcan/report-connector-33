@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { FileSearch } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { hasReportData, reportMeta } from "@/data/report";
+import { reportMeta } from "@/data/report";
 
 const navItems = [
   { to: "/", label: "Yönetici Özeti" },
@@ -16,7 +16,7 @@ const navItems = [
   { to: "/ltv", label: "LTV" },
 ] as const;
 
-function EmptyState() {
+export function EmptyState() {
   return (
     <div
       role="status"
@@ -62,9 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-        {hasReportData ? children : <EmptyState />}
-      </main>
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">{children}</main>
 
       <footer className="border-t border-border">
         <div className="mx-auto max-w-6xl px-4 py-5 text-xs leading-relaxed text-muted-foreground">
