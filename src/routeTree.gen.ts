@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ButceRouteImport } from './routes/butce'
 import { Route as CacRouteImport } from './routes/cac'
 import { Route as FinansmanRouteImport } from './routes/finansman'
@@ -18,10 +19,16 @@ import { Route as LtvRouteImport } from './routes/ltv'
 import { Route as NakitRouteImport } from './routes/nakit'
 import { Route as SatisRouteImport } from './routes/satis'
 import { Route as TahminRouteImport } from './routes/tahmin'
+import { Route as VeriGirisiRouteImport } from './routes/veri-girisi'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ButceRoute = ButceRouteImport.update({
@@ -64,9 +71,15 @@ const TahminRoute = TahminRouteImport.update({
   path: '/tahmin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VeriGirisiRoute = VeriGirisiRouteImport.update({
+  id: '/veri-girisi',
+  path: '/veri-girisi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/butce': typeof ButceRoute
   '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
@@ -75,9 +88,11 @@ export interface FileRoutesByFullPath {
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
+  '/veri-girisi': typeof VeriGirisiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/butce': typeof ButceRoute
   '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
@@ -86,10 +101,12 @@ export interface FileRoutesByTo {
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
+  '/veri-girisi': typeof VeriGirisiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/butce': typeof ButceRoute
   '/cac': typeof CacRoute
   '/finansman': typeof FinansmanRoute
@@ -98,11 +115,13 @@ export interface FileRoutesById {
   '/nakit': typeof NakitRoute
   '/satis': typeof SatisRoute
   '/tahmin': typeof TahminRoute
+  '/veri-girisi': typeof VeriGirisiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/butce'
     | '/cac'
     | '/finansman'
@@ -111,9 +130,11 @@ export interface FileRouteTypes {
     | '/nakit'
     | '/satis'
     | '/tahmin'
+    | '/veri-girisi'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/butce'
     | '/cac'
     | '/finansman'
@@ -122,9 +143,11 @@ export interface FileRouteTypes {
     | '/nakit'
     | '/satis'
     | '/tahmin'
+    | '/veri-girisi'
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/butce'
     | '/cac'
     | '/finansman'
@@ -133,10 +156,12 @@ export interface FileRouteTypes {
     | '/nakit'
     | '/satis'
     | '/tahmin'
+    | '/veri-girisi'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   ButceRoute: typeof ButceRoute
   CacRoute: typeof CacRoute
   FinansmanRoute: typeof FinansmanRoute
@@ -145,6 +170,7 @@ export interface RootRouteChildren {
   NakitRoute: typeof NakitRoute
   SatisRoute: typeof SatisRoute
   TahminRoute: typeof TahminRoute
+  VeriGirisiRoute: typeof VeriGirisiRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -154,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/butce': {
@@ -212,11 +245,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TahminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/veri-girisi': {
+      id: '/veri-girisi'
+      path: '/veri-girisi'
+      fullPath: '/veri-girisi'
+      preLoaderRoute: typeof VeriGirisiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   ButceRoute: ButceRoute,
   CacRoute: CacRoute,
   FinansmanRoute: FinansmanRoute,
@@ -225,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   NakitRoute: NakitRoute,
   SatisRoute: SatisRoute,
   TahminRoute: TahminRoute,
+  VeriGirisiRoute: VeriGirisiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

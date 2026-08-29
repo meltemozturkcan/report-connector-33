@@ -1,24 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { KpiCard } from "@/components/report/KpiCard";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
-import {
-  baseScenario,
-  cashFlow,
-  currentMargin,
-  currentMonth,
-  debt,
-  forecast,
-  hasReportData,
-  inventory,
-  narrative,
-  netProfitVariance,
-  previousMonth,
-  receivables,
-} from "@/data/report";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -41,6 +28,22 @@ export const Route = createFileRoute("/")({
 });
 
 function ExecutiveSummary() {
+  const {
+    baseScenario,
+    cashFlow,
+    currentMargin,
+    previousMargin,
+    currentMonth,
+    debt,
+    forecast,
+    hasReportData,
+    inventory,
+    narrative,
+    netProfitVariance,
+    previousMonth,
+    receivables,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>
@@ -66,23 +69,32 @@ function ExecutiveSummary() {
           value={formatAmount(current.sales)}
           delta={{
             text: `${formatPercent(changePercent(current.sales, previous.sales))} önceki aya göre`,
-            tone: "positive",
+            tone: current.sales >= previous.sales ? "positive" : "negative",
           }}
         />
         <KpiCard
           label="FAVÖK marjı"
           value={formatPercent(currentMargin.ebitda)}
-          delta={{ text: "1,0 puan gerileme", tone: "negative" }}
+          delta={{
+            text: `${formatAmount(currentMargin.ebitda - previousMargin.ebitda, 1)} puan`,
+            tone: currentMargin.ebitda >= previousMargin.ebitda ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="Faaliyet nakit akışı"
           value={formatAmount(cashFlow.operating)}
-          delta={{ text: "Negatife döndü", tone: "negative" }}
+          delta={{
+            text: cashFlow.operating >= 0 ? "Pozitif" : "Negatif",
+            tone: cashFlow.operating >= 0 ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="Net borç / FAVÖK"
           value={formatRatio(debt.netDebtToEbitda, 1)}
-          delta={{ text: `DSCR ${formatRatio(debt.dscr, 2)}`, tone: "negative" }}
+          delta={{
+            text: `DSCR ${formatRatio(debt.dscr, 2)}`,
+            tone: debt.netDebtToEbitda <= 3 && debt.dscr >= 1.3 ? "positive" : "negative",
+          }}
         />
       </div>
 

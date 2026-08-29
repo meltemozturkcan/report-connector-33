@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
@@ -8,16 +9,6 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
-import {
-  cashFlow,
-  currentMargin,
-  currentMonth,
-  hasReportData,
-  margins,
-  previousMargin,
-  previousMonth,
-  salesBreakdown,
-} from "@/data/report";
 import { formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/karlilik")({
@@ -39,6 +30,17 @@ export const Route = createFileRoute("/karlilik")({
 });
 
 function ProfitabilityPage() {
+  const {
+    cashFlow,
+    currentMargin,
+    currentMonth,
+    hasReportData,
+    margins,
+    previousMargin,
+    previousMonth,
+    salesBreakdown,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>

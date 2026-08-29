@@ -1,4 +1,4 @@
-import { reportMeta } from "@/data/report";
+import { useReport } from "@/hooks/useReport";
 
 type PageHeaderProps = {
   title: string;
@@ -6,10 +6,13 @@ type PageHeaderProps = {
 };
 
 export function PageHeader({ title, description }: PageHeaderProps) {
+  const { reportMeta } = useReport();
+  const metaText = [reportMeta.company, reportMeta.period].filter(Boolean).join(" · ");
+
   return (
     <header className="border-b border-border pb-6">
       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-        {reportMeta.company} · {reportMeta.period}
+        {metaText}
       </p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {title}

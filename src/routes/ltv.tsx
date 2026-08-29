@@ -1,19 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Insight } from "@/components/report/Insight";
-import {
-  currentUnitEconomics,
-  hasReportData,
-  ltvDetail,
-  previousUnitEconomics,
-  unitEconomics,
-} from "@/data/report";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/ltv")({
@@ -36,6 +30,14 @@ export const Route = createFileRoute("/ltv")({
 });
 
 function LtvPage() {
+  const {
+    currentUnitEconomics,
+    hasReportData,
+    ltvDetail,
+    previousUnitEconomics,
+    unitEconomics,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>
@@ -61,15 +63,15 @@ function LtvPage() {
           value={`${formatAmount(ltvDetail.currentLtv)} TL`}
           delta={{
             text: `${formatPercent(changePercent(ltvDetail.currentLtv, ltvDetail.previousLtv))} önceki aya göre`,
-            tone: "negative",
+            tone: ltvDetail.currentLtv >= ltvDetail.previousLtv ? "positive" : "negative",
           }}
         />
         <KpiCard
           label="Aylık churn"
           value={formatPercent(current.churnRate)}
           delta={{
-            text: `${formatAmount(current.churnRate - previous.churnRate, 1)} puan artış`,
-            tone: "negative",
+            text: `${formatAmount(current.churnRate - previous.churnRate, 1)} puan değişim`,
+            tone: current.churnRate > previous.churnRate ? "negative" : "positive",
           }}
         />
         <KpiCard
@@ -79,7 +81,7 @@ function LtvPage() {
         <KpiCard
           label="LTV / CAC"
           value={formatRatio(ratio, 1)}
-          delta={{ text: "Hedef 3,0x", tone: "negative" }}
+          delta={{ text: `Hedef 3,0x`, tone: ratio >= 3 ? "positive" : "negative" }}
         />
       </div>
 
@@ -113,13 +115,14 @@ function LtvPage() {
           rows={ltvDetail.cohorts}
           columns={[
             { header: "Kohort", cell: (row) => row.cohort },
-            { header: "12. ay elde tutma", align: "right", cell: (row) => formatPercent(row.month12Retention * 100, 0) },
+            { header: "12. ay elde tutma", align: "right", cell: (row) => formatPercent(row.month12Retention, 0) },
             { header: "LTV (TL)", align: "right", cell: (row) => formatAmount(row.ltv) },
           ]}
         />
         <Insight question="Kalite mi düşüyor?">
-          2025 Q3 kohortunda %74 olan 12. ay elde tutma, 2026 Q2 kohortunda %66'ya indi. Ücretli kanaldan
-          gelen müşteriler daha erken ayrılıyor; yüksek CAC ile alınan büyüme, düşük LTV ile geri dönüyor.
+          Kohortların 12. ay elde tutma oranları düşüyorsa, yüksek CAC ile alınan büyüme düşük LTV ile geri
+          döner. Tablodaki en yeni kohortun elde tutma oranını en eski kohortla karşılaştırın: fark, kazanım
+          kalitesindeki değişimi gösterir.
         </Insight>
       </Section>
 
@@ -152,9 +155,9 @@ function LtvPage() {
         </div>
         <Insight question="Bundan sonra ne yapacağız?">
           Kurumsal segment {formatRatio(ltvDetail.bySegment[0]!.ltv / ltvDetail.bySegment[0]!.cac, 1)} LTV/CAC ile
-          en sağlıklı alan; KOBİ segmentinde churn %5,4 ile değeri eritiyor. Kazanım bütçesinin kurumsal ve
-          orta ölçek segmentine kaydırılması, net gelir elde tutma oranını{" "}
-          {formatPercent(ltvDetail.netRevenueRetention * 100, 0)} seviyesinin üzerine taşır.
+          en yüksek LTV/CAC oranına sahip. Kazanım bütçesinin oranı yüksek segmentlere kaydırılması, net gelir
+          elde tutma oranını{" "}
+          {formatPercent(ltvDetail.netRevenueRetention, 0)} seviyesinin üzerine taşır.
         </Insight>
       </Section>
     </AppShell>

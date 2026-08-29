@@ -1,19 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
-import {
-  baseScenario,
-  budgetVariance,
-  forecast,
-  hasReportData,
-  netProfitVariance,
-  varianceReasons,
-} from "@/data/report";
 import { formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/butce")({
@@ -35,6 +28,15 @@ export const Route = createFileRoute("/butce")({
 });
 
 function BudgetPage() {
+  const {
+    baseScenario,
+    budgetVariance,
+    forecast,
+    hasReportData,
+    netProfitVariance,
+    varianceReasons,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>

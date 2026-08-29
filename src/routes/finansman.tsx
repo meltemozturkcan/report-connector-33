@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
@@ -8,7 +9,6 @@ import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
 import { Progress } from "@/components/ui/progress";
-import { capex, cashFlow, debt, hasReportData } from "@/data/report";
 import { formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/finansman")({
@@ -27,6 +27,13 @@ export const Route = createFileRoute("/finansman")({
 });
 
 function FinancingPage() {
+  const {
+    capex,
+    cashFlow,
+    debt,
+    hasReportData,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>
@@ -49,18 +56,27 @@ function FinancingPage() {
         <KpiCard
           label="Toplam finansal borç"
           value={formatAmount(debt.total)}
-          delta={{ text: `${formatAmount(debt.total - debt.previous)} artış`, tone: "negative" }}
+          delta={{
+            text: `${formatAmount(debt.total - debt.previous)} değişim`,
+            tone: debt.total > debt.previous ? "negative" : "positive",
+          }}
         />
         <KpiCard label="Net borç" value={formatAmount(debt.net)} note="Finansal borç - nakit" />
         <KpiCard
           label="Net borç / FAVÖK"
           value={formatRatio(debt.netDebtToEbitda, 1)}
-          delta={{ text: "Eşik 3,0x aşıldı", tone: "negative" }}
+          delta={{
+            text: debt.netDebtToEbitda > 3 ? "3,0x eşiği aşıldı" : "3,0x eşiğinin altında",
+            tone: debt.netDebtToEbitda > 3 ? "negative" : "positive",
+          }}
         />
         <KpiCard
           label="DSCR"
           value={formatRatio(debt.dscr, 2)}
-          delta={{ text: "Hedef 1,30", tone: "negative" }}
+          delta={{
+            text: "Hedef 1,30",
+            tone: debt.dscr >= 1.3 ? "positive" : "negative",
+          }}
         />
       </div>
 

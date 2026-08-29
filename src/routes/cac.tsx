@@ -1,20 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Insight } from "@/components/report/Insight";
-import {
-  cacDetail,
-  currentUnitEconomics,
-  hasReportData,
-  ltvDetail,
-  previousUnitEconomics,
-  unitEconomics,
-} from "@/data/report";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/cac")({
@@ -37,6 +30,15 @@ export const Route = createFileRoute("/cac")({
 });
 
 function CacPage() {
+  const {
+    cacDetail,
+    currentUnitEconomics,
+    hasReportData,
+    ltvDetail,
+    previousUnitEconomics,
+    unitEconomics,
+  } = useReport();
+
   if (!hasReportData) {
     return (
       <AppShell>
@@ -69,12 +71,15 @@ function CacPage() {
         <KpiCard
           label="CAC geri ödeme süresi"
           value={`${formatAmount(cacDetail.paybackMonths, 1)} ay`}
-          delta={{ text: `Hedef ${cacDetail.targetPaybackMonths} ay`, tone: "negative" }}
+          delta={{
+            text: `Hedef ${cacDetail.targetPaybackMonths} ay`,
+            tone: cacDetail.paybackMonths <= cacDetail.targetPaybackMonths ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="LTV / CAC"
           value={formatRatio(ratio, 1)}
-          delta={{ text: "Hedef 3,0x", tone: "negative" }}
+          delta={{ text: `Hedef 3,0x`, tone: ratio >= 3 ? "positive" : "negative" }}
         />
         <KpiCard
           label="Yeni müşteri"
@@ -139,14 +144,14 @@ function CacPage() {
               { header: "Harcama (bin TL)", align: "right", cell: (row) => formatAmount(row.spend) },
               { header: "Yeni müşteri", align: "right", cell: (row) => formatAmount(row.newCustomers) },
               { header: "CAC (TL)", align: "right", cell: (row) => formatAmount(row.cac) },
-              { header: "Payı", align: "right", cell: (row) => formatPercent(row.share * 100, 0) },
+              { header: "Payı", align: "right", cell: (row) => formatPercent(row.share, 0) },
             ]}
           />
         </div>
         <Insight question="Nerede bağlandı?">
-          Yeni müşterilerin %47'si organik ve referans kanalından, toplam harcamanın yalnızca %19'u ile
-          geliyor. Ücretli kanalların CAC'i ortalamanın {formatRatio(cacDetail.paidCac / cacDetail.blendedCac, 1)} üzerinde;
-          bütçenin ücretli taraftan referans programına kaydırılması blended CAC'i doğrudan aşağı çeker.
+          Toplam kazanım harcaması {formatAmount(cacDetail.totalSpend)} bin TL; blended CAC{" "}
+          {formatAmount(cacDetail.blendedCac)} TL. Kanal tablosundaki CAC'i ortalamanın üzerinde olan
+          kanallardan, altında kalan kanallara bütçe kaydırmak blended CAC'i doğrudan aşağı çeker.
         </Insight>
       </Section>
 
@@ -170,8 +175,9 @@ function CacPage() {
           ]}
         />
         <Insight question="Bundan sonra ne yapacağız?">
-          Deneme → ücretli müşteri dönüşümü %16,4. Bu oran 2 puan iyileşirse aynı harcama ile CAC yaklaşık
-          %11 düşer ve geri ödeme süresi hedeflenen {cacDetail.targetPaybackMonths} aya yaklaşır.
+          Hunideki her aşamanın dönüşüm oranı doğrudan CAC'i belirler: son aşamadaki dönüşüm bir puan
+          iyileştiğinde aynı harcama daha fazla müşteri getirir ve geri ödeme süresi hedeflenen{" "}
+          {cacDetail.targetPaybackMonths} aya yaklaşır.
         </Insight>
       </Section>
     </AppShell>
