@@ -543,6 +543,38 @@ function DataEntryPage() {
             otomatik hesaplanır.
           </div>
 
+          <div className="flex flex-wrap items-center gap-3 border border-dashed border-border bg-muted/40 px-4 py-3">
+            <div className="text-xs leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Morvoi 5 yıllık projeksiyon</strong> — Yıllık Abonelik
+              (19.200 TL/yıl) ve Aylık Abonelik (2.000 TL/ay → 24.000 TL/yıl) katmanlarını ve dönem
+              aktif abone adetlerini tek tıkla yükler. Diğer gelir, maliyet ve huni alanlarını doldurmanız
+              gerekir.
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                patch("feasibility", {
+                  ...draft.feasibility,
+                  tiers: [
+                    { name: "Yıllık Abonelik", unitPrice: 19200 },
+                    { name: "Aylık Abonelik", unitPrice: 24000 },
+                  ],
+                  periods: [
+                    { period: "Yıl 1", counts: [5, 10], otherRevenue: 0, fixedCostOverride: 0 },
+                    { period: "Yıl 2", counts: [15, 30], otherRevenue: 0, fixedCostOverride: 0 },
+                    { period: "Yıl 3", counts: [90, 100], otherRevenue: 0, fixedCostOverride: 0 },
+                    { period: "Yıl 4", counts: [120, 150], otherRevenue: 0, fixedCostOverride: 0 },
+                    { period: "Yıl 5", counts: [180, 200], otherRevenue: 0, fixedCostOverride: 0 },
+                  ],
+                })
+              }
+            >
+              Morvoi projeksiyonunu yükle
+            </Button>
+          </div>
+
           <RepeatTable
             label="Tablo 4.4-1 · Katman fiyat listesi"
             description="Her katmanın yıllık liste fiyatı. Harmanlanmış fiyat = Σ(adet × fiyat) / toplam adet olarak her dönem yeniden hesaplanır."
