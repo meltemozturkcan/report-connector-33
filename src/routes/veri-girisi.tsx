@@ -349,7 +349,24 @@ function DataEntryPage() {
               }
             />
           </div>
+
+          <RepeatTable
+            label="Nakit akışı / tahsilat takibi"
+            description="Yalnızca o ay faturalandırılan ve tahsil edilen tutarlar yazılır; toplam tahsilat otomatik hesaplanır."
+            rows={draft.feasibility.cashCollections}
+            emptyRow={emptyCashCollectionRow}
+            onChange={(rows) => patch("feasibility", { ...draft.feasibility, cashCollections: rows })}
+            addLabel="Dönem ekle"
+            columns={[
+              { key: "period", label: "Dönem", type: "text", width: "22%" },
+              { key: "pilotCount", label: "Yeni ücretli pilot (adet)" },
+              { key: "pilot", label: "Pilot tahsilatı (TL)" },
+              { key: "annualCount", label: "Yeni yıllık abonelik (adet)" },
+              { key: "annual", label: "Yıllık abonelik tahsilatı (TL)" },
+            ]}
+          />
         </TabsContent>
+
 
         <TabsContent value="finansman" className="space-y-6 border border-border bg-card p-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
