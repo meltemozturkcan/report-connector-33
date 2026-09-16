@@ -593,6 +593,32 @@ function CashCollectionSection({ rows }: { rows: CashCollectionRow[] }) {
   );
 }
 
+type RevenueChannelRow = { channel: string; start: string; unit: string; driver: string };
+
+/** Gelir kanalları haritası: kanal, başlangıç, gelir birimi ve ana sürücü. */
+function RevenueChannelSection({ rows }: { rows: RevenueChannelRow[] }) {
+  if (rows.length === 0) return null;
+
+  return (
+    <Section
+      title="Gelir kanalları haritası"
+      description="Hangi kanal ne zaman devreye giriyor, geliri hangi birimden geliyor ve büyümesini ne sürüyor."
+    >
+      <DataTable
+        caption="Gelir kanalları, başlangıç zamanı ve ana sürücüleri"
+        rowKey={(row) => row.channel}
+        rows={rows}
+        columns={[
+          { header: "Kanal", cell: (row) => row.channel },
+          { header: "Başlangıç", cell: (row) => row.start || "—" },
+          { header: "Gelir birimi", cell: (row) => row.unit || "—" },
+          { header: "Ana sürücü", cell: (row) => row.driver || "—" },
+        ]}
+      />
+    </Section>
+  );
+}
+
 /** Referans fiyat listesi ve gelir olmayan / indirim kalemleri. */
 function PriceCatalogSection({
   priceCatalog,
