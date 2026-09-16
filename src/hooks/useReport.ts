@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { computeAcquisition, type AcquisitionModel } from "@/lib/acquisition-calc";
 import { computeFeasibility, type FeasibilityModel } from "@/lib/feasibility-calc";
 import { computeReport, type ReportModel } from "@/lib/report-calc";
 import { emptyReportInput, parseReportInput, type ReportInput } from "@/lib/report-schema";
@@ -60,6 +61,16 @@ export function useReportInput() {
 export function useReport(): ReportModel & { isLoading: boolean } {
   const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
   const model = useMemo(() => computeReport(query.data ?? emptyReportInput), [query.data]);
+  return { ...model, isLoading: query.isLoading };
+}
+
+/** Edinim (CAC) ekonomisi modeli. Edinim sayfası bunu kullanır. */
+export function useAcquisition(): AcquisitionModel & { isLoading: boolean } {
+  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
+  const model = useMemo(
+    () => computeAcquisition((query.data ?? emptyReportInput).acquisition),
+    [query.data],
+  );
   return { ...model, isLoading: query.isLoading };
 }
 

@@ -12,9 +12,17 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useReportInput } from "@/hooks/useReport";
+import { computeAcquisition } from "@/lib/acquisition-calc";
 import { computeFeasibility, computeFirstYearCosts } from "@/lib/feasibility-calc";
 import { computeReport } from "@/lib/report-calc";
 import {
+  cacBuckets,
+  emptyCacChannelRow,
+  emptyCacItemRow,
+  emptyCohortChannelRow,
+  emptyFixedOpsRow,
+  emptyPerReportCostRow,
+  emptySpendLedgerRow,
   emptyFirstYearCostRow,
   emptyFixedItemRow,
   emptyMonthlyRow,
@@ -29,6 +37,21 @@ import {
   type ReportInput,
 } from "@/lib/report-schema";
 import { formatAmount, formatPercent, formatRatio } from "@/lib/format";
+
+const monthLabels = [
+  "Ocak",
+  "Şubat",
+  "Mart",
+  "Nisan",
+  "Mayıs",
+  "Haziran",
+  "Temmuz",
+  "Ağustos",
+  "Eylül",
+  "Ekim",
+  "Kasım",
+  "Aralık",
+];
 
 export const Route = createFileRoute("/veri-girisi")({
   head: () => ({
@@ -65,6 +88,7 @@ function DataEntryPage() {
   const preview = computeReport(draft);
   const feasibilityPreview = computeFeasibility(draft.feasibility);
   const firstYearPreview = computeFirstYearCosts(draft.feasibility);
+  const acquisitionPreview = computeAcquisition(draft.acquisition);
 
   const patch = <K extends keyof ReportInput>(key: K, value: ReportInput[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
@@ -147,6 +171,8 @@ function DataEntryPage() {
           <TabsTrigger value="birim">CAC / LTV</TabsTrigger>
           <TabsTrigger value="fizibilite">Fizibilite / BEP</TabsTrigger>
           <TabsTrigger value="ilkyil">İlk yıl Ar-Ge / şirket</TabsTrigger>
+          <TabsTrigger value="edinim">Edinim (B2C)</TabsTrigger>
+          <TabsTrigger value="b2b">B2B lisans maliyeti</TabsTrigger>
           <TabsTrigger value="yorum">Yorum ve aksiyon</TabsTrigger>
 
         </TabsList>
@@ -1134,6 +1160,470 @@ function DataEntryPage() {
                 ))}
               </ul>
             ) : null}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="edinim" className="space-y-6 border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Her gider kalemi defterde tek satırda girilir ve tek bir yere yazılır. Atıf oranı kalemi
+            böler: örneğin pazarlama personelinin %30'u B2C edinimine ayrılıyorsa yalnız %30'u CAC
+            havuzuna girer. Geçerli yerler: {cacBuckets.join(", ")}. Tutarlar TL, oranlar %.
+          </p>
+
+          <RepeatTable
+            label="Edinim harcaması defteri"
+            description="CAC'e girmeyen kalemleri de buraya yazın; doğru kovada (Ürün COGS, Ürün operasyon, Ar-Ge / ürün OPEX, Genel yönetim, Uzman hizmet maliyeti) tutulduklarında kanal CAC'ine karışmazlar."
+            rows={draft.acquisition.spendLedger}
+            emptyRow={emptySpendLedgerRow}
+            onChange={(rows) =>
+              patch("acquisition", { ...draft.acquisition, spendLedger: rows })
+            }
+            addLabel="Harcama kalemi ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "24%" },
+              { key: "bucket", label: "Yer", type: "text", width: "16%" },
+              { key: "period", label: "Dönem", type: "text", width: "12%" },
+              { key: "amount", label: "Tutar (TL)" },
+              { key: "attributionRate", label: "Atıf oranı (%)" },
+              { key: "note", label: "Not", type: "text", width: "16%" },
+            ]}
+          />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Cohort bazlı kazanım tabloları</h3>
+                <p className="text-xs text-muted-foreground">
+                  Her cohort (Mart, Nisan, Mayıs, Haziran …) ayrı tutulur. Uygun ücretsiz ebeveyn =
+                  onam + gelişim öyküsü + teknik kalite + paket ekranı görüntüleme.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  patch("acquisition", {
+                    ...draft.acquisition,
+                    b2cCohorts: [...draft.acquisition.b2cCohorts, { cohort: "", channels: [] }],
+                  })
+                }
+              >
+                Cohort ekle
+              </Button>
+            </div>
+
+            {draft.acquisition.b2cCohorts.map((cohort, index) => (
+              <div key={index} className="space-y-3 border border-border p-3">
+                <div className="flex items-end gap-3">
+                  <div className="w-56">
+                    <TextField
+                      id={`cohort-${index}`}
+                      label="Cohort"
+                      placeholder="Örn. Mart 2028"
+                      value={cohort.cohort}
+                      onChange={(value) =>
+                        patch("acquisition", {
+                          ...draft.acquisition,
+                          b2cCohorts: draft.acquisition.b2cCohorts.map((row, i) =>
+                            i === index ? { ...row, cohort: value } : row,
+                          ),
+                        })
+                      }
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      patch("acquisition", {
+                        ...draft.acquisition,
+                        b2cCohorts: draft.acquisition.b2cCohorts.filter((_, i) => i !== index),
+                      })
+                    }
+                  >
+                    Cohort'u sil
+                  </Button>
+                </div>
+
+                <RepeatTable
+                  label="Kanal bazlı harcama ve kazanım"
+                  rows={cohort.channels}
+                  emptyRow={emptyCohortChannelRow}
+                  onChange={(rows) =>
+                    patch("acquisition", {
+                      ...draft.acquisition,
+                      b2cCohorts: draft.acquisition.b2cCohorts.map((row, i) =>
+                        i === index ? { ...row, channels: rows } : row,
+                      ),
+                    })
+                  }
+                  addLabel="Kanal ekle"
+                  columns={[
+                    { key: "channel", label: "Kanal", type: "text", width: "30%" },
+                    { key: "spend", label: "Harcama (TL)" },
+                    { key: "eligibleFreeParents", label: "Uygun ücretsiz ebeveyn" },
+                    { key: "paidParents", label: "Ücretli ebeveyn" },
+                  ]}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <NumberField
+              id="basicPrice"
+              label="Basic aylık fiyat (TL)"
+              value={draft.acquisition.b2cUnit.basicPrice}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, basicPrice: value },
+                })
+              }
+            />
+            <NumberField
+              id="premiumPrice"
+              label="Premium aylık fiyat (TL)"
+              value={draft.acquisition.b2cUnit.premiumPrice}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, premiumPrice: value },
+                })
+              }
+            />
+            <NumberField
+              id="b2cCommission"
+              label="Ödeme komisyonu (%)"
+              value={draft.acquisition.b2cUnit.paymentCommissionRate}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, paymentCommissionRate: value },
+                })
+              }
+            />
+            <NumberField
+              id="techCostPerUser"
+              label="Kullanıcı/rapor başına teknik maliyet (TL/ay)"
+              value={draft.acquisition.b2cUnit.techCostPerUser}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, techCostPerUser: value },
+                })
+              }
+            />
+            <NumberField
+              id="supportCostPerUser"
+              label="Kullanıcı başına destek maliyeti (TL/ay)"
+              value={draft.acquisition.b2cUnit.supportCostPerUser}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, supportCostPerUser: value },
+                })
+              }
+            />
+            <NumberField
+              id="basicChurn"
+              label="Basic aylık churn (%)"
+              value={draft.acquisition.b2cUnit.basicChurnRate}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, basicChurnRate: value },
+                })
+              }
+            />
+            <NumberField
+              id="premiumChurn"
+              label="Premium aylık churn (%)"
+              value={draft.acquisition.b2cUnit.premiumChurnRate}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, premiumChurnRate: value },
+                })
+              }
+            />
+            <NumberField
+              id="basicMix"
+              label="Ücretli portföyde Basic payı (%)"
+              hint="Premium payı otomatik 100 − Basic"
+              value={draft.acquisition.b2cUnit.basicMixRate}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, basicMixRate: value },
+                })
+              }
+            />
+            <NumberField
+              id="freeToPaid"
+              label="Ücretsizden ücretliye dönüşüm (%)"
+              hint="Boş bırakılırsa cohort tablolarından hesaplanır"
+              value={draft.acquisition.b2cUnit.freeToPaidRate}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cUnit: { ...draft.acquisition.b2cUnit, freeToPaidRate: value },
+                })
+              }
+            />
+          </div>
+
+          <div className="border border-border bg-muted/40 px-4 py-3">
+            <h3 className="text-sm font-medium text-foreground">Anlık sonuç</h3>
+            <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Freemium CAC</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(acquisitionPreview.blendedFreemiumCac)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Ücretli CAC</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(acquisitionPreview.measuredPaidCac)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Karma LTV</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(acquisitionPreview.blendedLtv)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">LTV / CAC</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatRatio(acquisitionPreview.b2cLtvToCac, 2)}
+                </dd>
+              </div>
+            </dl>
+            {acquisitionPreview.warnings.length > 0 ? (
+              <ul className="mt-3 space-y-1 text-sm text-destructive">
+                {acquisitionPreview.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="b2b" className="space-y-6 border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Sabit maliyetler lisans başına dağıtılırken yıl sonu hedefi değil, yıl içindeki ortalama
+            aktif lisans eşdeğeri kullanılır: Ocak–Aralık aktif lisans toplamı ÷ 12.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <NumberField
+              id="licensePrice"
+              label="Yıllık lisans fiyatı (TL)"
+              value={draft.acquisition.b2bLicense.licensePrice}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2bLicense: { ...draft.acquisition.b2bLicense, licensePrice: value },
+                })
+              }
+            />
+            <NumberField
+              id="reportsPerLicense"
+              label="Lisans başına yıllık rapor"
+              value={draft.acquisition.b2bLicense.reportsPerLicense}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2bLicense: { ...draft.acquisition.b2bLicense, reportsPerLicense: value },
+                })
+              }
+            />
+            <NumberField
+              id="onlineShare"
+              label="Çevrim içi tahsil edilen pay (%)"
+              hint="EFT/havale payına komisyon uygulanmaz"
+              value={draft.acquisition.b2bLicense.onlineCollectionShare}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2bLicense: { ...draft.acquisition.b2bLicense, onlineCollectionShare: value },
+                })
+              }
+            />
+            <NumberField
+              id="b2bCommission"
+              label="Sanal POS komisyonu (%)"
+              value={draft.acquisition.b2bLicense.paymentCommissionRate}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2bLicense: { ...draft.acquisition.b2bLicense, paymentCommissionRate: value },
+                })
+              }
+            />
+            <NumberField
+              id="annualSupportCost"
+              label="Yıllık müşteri destek maliyeti (TL)"
+              value={draft.acquisition.b2bLicense.annualSupportCost}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2bLicense: { ...draft.acquisition.b2bLicense, annualSupportCost: value },
+                })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Aylık aktif lisans (Ocak–Aralık)</h3>
+                <p className="text-xs text-muted-foreground">
+                  Aktif lisans eşdeğeri:{" "}
+                  {formatAmount(acquisitionPreview.b2b.activeLicenseEquivalent, 1)}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  patch("acquisition", {
+                    ...draft.acquisition,
+                    b2bLicense: {
+                      ...draft.acquisition.b2bLicense,
+                      monthlyActiveLicenses: Array.from({ length: 12 }, (_, i) =>
+                        draft.acquisition.b2bLicense.monthlyActiveLicenses[i] ?? 0,
+                      ),
+                    },
+                  })
+                }
+              >
+                12 ay oluştur
+              </Button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-6">
+              {draft.acquisition.b2bLicense.monthlyActiveLicenses.map((value, index) => (
+                <NumberField
+                  key={index}
+                  id={`activeLicense-${index}`}
+                  label={monthLabels[index] ?? `${index + 1}. ay`}
+                  value={value}
+                  onChange={(next) =>
+                    patch("acquisition", {
+                      ...draft.acquisition,
+                      b2bLicense: {
+                        ...draft.acquisition.b2bLicense,
+                        monthlyActiveLicenses: draft.acquisition.b2bLicense.monthlyActiveLicenses.map(
+                          (row, i) => (i === index ? next : row),
+                        ),
+                      },
+                    })
+                  }
+                />
+              ))}
+            </div>
+          </div>
+
+          <RepeatTable
+            label="Rapor başına doğrudan teknik maliyet"
+            description="GPU / inference, ek teknik işlem, ses-veri depolama, OTP/SMS, e-posta gibi kalemler."
+            rows={draft.acquisition.b2bLicense.perReport}
+            emptyRow={emptyPerReportCostRow}
+            onChange={(rows) =>
+              patch("acquisition", {
+                ...draft.acquisition,
+                b2bLicense: { ...draft.acquisition.b2bLicense, perReport: rows },
+              })
+            }
+            addLabel="Teknik kalem ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "50%" },
+              { key: "unitCost", label: "Rapor başına (TL)" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Sabit ürün operasyon maliyeti"
+            description="Karma kullanımlı kalemlerde (ChatGPT, Google Workspace, ofis, muhasebe, hukuk) ürün kullanım payı girin; %100 dağıtmayın."
+            rows={draft.acquisition.b2bLicense.fixedOps}
+            emptyRow={emptyFixedOpsRow}
+            onChange={(rows) =>
+              patch("acquisition", {
+                ...draft.acquisition,
+                b2bLicense: { ...draft.acquisition.b2bLicense, fixedOps: rows },
+              })
+            }
+            addLabel="Operasyon kalemi ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "44%" },
+              { key: "annualAmount", label: "Yıllık tutar (TL)" },
+              { key: "productShareRate", label: "Ürün kullanım payı (%)" },
+            ]}
+          />
+
+          <RepeatTable
+            label="CAC kanalları ve yeni lisans"
+            rows={draft.acquisition.b2bLicense.cacChannels}
+            emptyRow={emptyCacChannelRow}
+            onChange={(rows) =>
+              patch("acquisition", {
+                ...draft.acquisition,
+                b2bLicense: { ...draft.acquisition.b2bLicense, cacChannels: rows },
+              })
+            }
+            addLabel="Kanal ekle"
+            columns={[
+              { key: "channel", label: "Kanal", type: "text", width: "60%" },
+              { key: "newLicenses", label: "Yeni lisans" },
+            ]}
+          />
+
+          <RepeatTable
+            label="CAC alt kalemleri"
+            description="Kanal adını yukarıdaki kanal tablosuyla aynı yazın; kanal CAC'i alt kalem toplamı ÷ yeni lisans olarak hesaplanır."
+            rows={draft.acquisition.b2bLicense.cacItems}
+            emptyRow={emptyCacItemRow}
+            onChange={(rows) =>
+              patch("acquisition", {
+                ...draft.acquisition,
+                b2bLicense: { ...draft.acquisition.b2bLicense, cacItems: rows },
+              })
+            }
+            addLabel="Alt kalem ekle"
+            columns={[
+              { key: "name", label: "Alt kalem", type: "text", width: "44%" },
+              { key: "channel", label: "Kanal", type: "text", width: "28%" },
+              { key: "amount", label: "Tutar (TL)" },
+            ]}
+          />
+
+          <div className="border border-border bg-muted/40 px-4 py-3">
+            <h3 className="text-sm font-medium text-foreground">Anlık maliyet kartı</h3>
+            <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Doğrudan hesap maliyeti</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(acquisitionPreview.b2b.directAccountCost)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">CAC öncesi tam maliyet</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(acquisitionPreview.b2b.fullCostBeforeCac)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Ağırlıklı CAC</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(acquisitionPreview.b2b.weightedB2bCac)} TL
+                </dd>
+              </div>
+            </dl>
           </div>
         </TabsContent>
 
