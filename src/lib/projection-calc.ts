@@ -313,10 +313,11 @@ export function computeProjection(input: ReportInput) {
     },
   ];
 
+  const b2bRatio = unitEconomics[0]?.ltvToCac ?? null;
+  const b2cRatio = unitEconomics[1]?.ltvToCac ?? null;
   const referenceBlendedLtvToCac =
-    unitEconomics[0].ltvToCac !== null && unitEconomics[1].ltvToCac !== null
-      ? (unitEconomics[0].ltvToCac + unitEconomics[1].ltvToCac) / 2
-      : null;
+    b2bRatio !== null && b2cRatio !== null ? (b2bRatio + b2cRatio) / 2 : null;
+
 
   return {
     hasProjectionData: yearsInPlan.length > 0,
