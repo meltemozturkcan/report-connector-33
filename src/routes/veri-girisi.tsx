@@ -1226,6 +1226,7 @@ function DataEntryPage() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <TextField
+              id="b2c-plan-period"
               label="Plan dönemi"
               value={draft.acquisition.b2cPlan.period}
               onChange={(value) =>
@@ -1236,6 +1237,7 @@ function DataEntryPage() {
               }
             />
             <NumberField
+              id="b2c-plan-cac-target"
               label="Hedef freemium CAC üst sınırı (TL)"
               value={draft.acquisition.b2cPlan.cacTarget}
               onChange={(value) =>
@@ -1246,6 +1248,7 @@ function DataEntryPage() {
               }
             />
             <NumberField
+              id="b2c-plan-store-commission"
               label="Mağaza içi tahsilat komisyonu (%)"
               value={draft.acquisition.b2cPlan.storeCommissionRate}
               onChange={(value) =>
