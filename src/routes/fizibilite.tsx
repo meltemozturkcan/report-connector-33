@@ -540,6 +540,50 @@ function FeasibilityPage() {
 type PriceCatalogRow = { name: string; price: number; unit: string; scope: string };
 type NonRevenueRow = { name: string; nature: string; condition: string; amount: number };
 
+type CashCollectionRow = { period: string; pilot: number; pilotConversion: number; newAnnual: number };
+
+/** Nakit akışı / tahsilat takibi: ay bazında tahsil edilen tutarlar ve toplam. */
+function CashCollectionSection({ rows }: { rows: CashCollectionRow[] }) {
+  if (rows.length === 0) return null;
+  const totals = rows.reduce(
+    (acc, row) => ({
+      pilot: acc.pilot + row.pilot,
+      pilotConversion: acc.pilotConversion + row.pilotConversion,
+      newAnnual: acc.newAnnual + row.newAnnual,
+    }),
+    { pilot: 0, pilotConversion: 0, newAnnual: 0 },
+  );
+  const grandTotal = totals.pilot + totals.pilotConversion + totals.newAnnual;
+
+  return (
+    <Section
+      title="Nakit akışı / tahsilat takibi"
+      description="Yalnızca o ay faturalandırılan ve tahsil edilen tutarlar yer alır; toplam tahsilat satır toplamı olarak hesaplanır."
+    >
+      <DataTable
+        caption="Nakit akışı ve tahsilat takibi"
+        rowKey={(row) => row.period}
+        rows={rows}
+        columns={[
+          { header: "Dönem", cell: (row) => row.period },
+          { header: "Pilot tahsilatı", align: "right", cell: (row) => formatAmount(row.pilot) },
+          { header: "Pilot dönüşümü yıllık abonelik", align: "right", cell: (row) => formatAmount(row.pilotConversion) },
+          { header: "Yeni yıllık profesyonel abonelik", align: "right", cell: (row) => formatAmount(row.newAnnual) },
+          {
+            header: "Toplam tahsilat",
+            align: "right",
+            cell: (row) => formatAmount(row.pilot + row.pilotConversion + row.newAnnual),
+          },
+        ]}
+      />
+      <p className="mt-3 text-sm text-muted-foreground">
+        Toplam: pilot {formatAmount(totals.pilot)} TL, pilot dönüşümü {formatAmount(totals.pilotConversion)} TL,
+        yeni yıllık abonelik {formatAmount(totals.newAnnual)} TL — genel tahsilat {formatAmount(grandTotal)} TL.
+      </p>
+    </Section>
+  );
+}
+
 /** Referans fiyat listesi ve gelir olmayan / indirim kalemleri. */
 function PriceCatalogSection({
   priceCatalog,
