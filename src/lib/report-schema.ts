@@ -370,6 +370,9 @@ export const reportInputSchema = z.object({
         cacChannels: z
           .array(z.object({ channel: text, newLicenses: num.default(0) }))
           .default([]),
+        /** Yıllık lisans kaybı (%); ölçülmeden 0 kalır, LTV hesaplanmaz. */
+        annualChurnRate: num.default(0),
+
       })
       .default({}),
     /** Ana maliyet katmanları: hangi katman B2C CAC'e girer. */
