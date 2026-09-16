@@ -122,7 +122,14 @@ function CacPage() {
         </Insight>
       </Section>
 
-      <Section title="Kanal bazlı CAC" description="Hangi kanal ucuza, hangisi pahalıya müşteri getiriyor?">
+      <Section
+        title={
+          cacDetail.channelPeriod
+            ? `Kanal bazlı CAC — ${cacDetail.channelPeriod}`
+            : "Kanal bazlı CAC"
+        }
+        description="Her kanal için harcama, yeni uygun ücretsiz ebeveyn ve yeni ücretli ebeveyn; freemium ve ücretli kazanım maliyeti ayrı izlenir."
+      >
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={cacDetail.byChannel} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
@@ -130,28 +137,61 @@ function CacPage() {
               <XAxis dataKey="channel" tickLine={false} axisLine={false} className="text-xs" />
               <YAxis tickLine={false} axisLine={false} className="text-xs" width={64} />
               <Tooltip formatter={(value: number) => `${formatAmount(value)} TL`} />
-              <Bar dataKey="cac" name="CAC (TL)" fill="hsl(var(--primary))" />
+              <Bar dataKey="freemiumCac" name="Freemium CAC (TL)" fill="hsl(var(--muted-foreground))" />
+              <Bar dataKey="cac" name="Ücretli CAC (TL)" fill="hsl(var(--primary))" />
             </BarChart>
           </ResponsiveContainer>
         </div>
         <div className="mt-4">
           <DataTable
-            caption="Kanal bazlı müşteri kazanım maliyeti"
+            caption="Kanal bazlı freemium ve ücretli kazanım maliyeti"
             rowKey={(row) => row.channel}
-            rows={cacDetail.byChannel}
+            rows={[
+              ...cacDetail.byChannel,
+              {
+                channel: "Toplam / blended",
+                spend: cacDetail.totalSpend,
+                freeSignups: cacDetail.totalFreeSignups,
+                newCustomers: cacDetail.totalPaidCustomers,
+                freemiumCac: cacDetail.channelFreemiumCac,
+                cac: cacDetail.channelPaidCac,
+                share: 100,
+              },
+            ]}
             columns={[
               { header: "Kanal", cell: (row) => row.channel },
               { header: "Harcama (bin TL)", align: "right", cell: (row) => formatAmount(row.spend) },
-              { header: "Yeni müşteri", align: "right", cell: (row) => formatAmount(row.newCustomers) },
-              { header: "CAC (TL)", align: "right", cell: (row) => formatAmount(row.cac) },
+              {
+                header: "Yeni uygun ücretsiz ebeveyn",
+                align: "right",
+                cell: (row) => formatAmount(row.freeSignups),
+              },
+              {
+                header: "Freemium CAC (TL)",
+                align: "right",
+                cell: (row) => (row.freeSignups > 0 ? formatAmount(row.freemiumCac) : "—"),
+              },
+              {
+                header: "Yeni ücretli ebeveyn",
+                align: "right",
+                cell: (row) => formatAmount(row.newCustomers),
+              },
+              {
+                header: "Ücretli CAC (TL)",
+                align: "right",
+                cell: (row) => (row.newCustomers > 0 ? formatAmount(row.cac) : "—"),
+              },
               { header: "Payı", align: "right", cell: (row) => formatPercent(row.share, 0) },
             ]}
           />
         </div>
         <Insight question="Nerede bağlandı?">
-          Toplam kazanım harcaması {formatAmount(cacDetail.totalSpend)} bin TL; blended CAC{" "}
-          {formatAmount(cacDetail.blendedCac)} TL. Kanal tablosundaki CAC'i ortalamanın üzerinde olan
-          kanallardan, altında kalan kanallara bütçe kaydırmak blended CAC'i doğrudan aşağı çeker.
+          Toplam kazanım harcaması {formatAmount(cacDetail.totalSpend)} bin TL; blended freemium CAC{" "}
+          {cacDetail.totalFreeSignups > 0 ? `${formatAmount(cacDetail.channelFreemiumCac)} TL` : "—"},
+          blended ücretli CAC{" "}
+          {cacDetail.totalPaidCustomers > 0 ? `${formatAmount(cacDetail.channelPaidCac)} TL` : "—"}.
+          Ücretli CAC'i ortalamanın üzerinde olan kanallardan, altında kalan kanallara bütçe kaydırmak
+          blended CAC'i doğrudan aşağı çeker.
         </Insight>
       </Section>
 
