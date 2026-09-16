@@ -53,7 +53,9 @@ function ProfitabilityPage() {
     );
   }
 
-  const baseScenarioYears = projection.scenariosAccrual.find((row) => row.name === "Baz")?.years ?? [];
+  const baseScenarioYears =
+    projection.scenariosAccrual.find((row: ProjectionScenario) => row.name === "Baz")?.years ?? [];
+
   const projectionYear = baseScenarioYears[baseScenarioYears.length - 1];
   const netProfitBridge: { label: string; amount: number; kind: "total" | "cost" }[] = projectionYear
     ? [
