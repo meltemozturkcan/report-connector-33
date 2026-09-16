@@ -457,61 +457,128 @@ function DataEntryPage() {
         </TabsContent>
 
         <TabsContent value="tahmin" className="space-y-6 border border-border bg-card p-4">
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Yıl sonu satış, FAVÖK ve nakit sonuçları elle girilmez; satış, maliyet, edinim ve finansman
+            sürücülerinden hesaplanır. Burada yalnızca sürücüleri girin. Ölçülmemiş girdiler sonuca yüklenmez,
+            Projeksiyon sayfasında "ölçülmeli" uyarısı olarak görünür.
+          </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <NumberField
-              id="budgetFullYearSales"
-              label="Yıllık bütçe — satış"
-              value={draft.forecast.budgetFullYearSales}
-              onChange={(value) => patch("forecast", { ...draft.forecast, budgetFullYearSales: value })}
+              id="projectionStartYear"
+              label="Plan başlangıç yılı"
+              value={draft.projection.startYear}
+              onChange={(value) => patch("projection", { ...draft.projection, startYear: value })}
             />
             <NumberField
-              id="budgetFullYearEbitda"
-              label="Yıllık bütçe — FAVÖK"
-              value={draft.forecast.budgetFullYearEbitda}
-              onChange={(value) =>
-                patch("forecast", { ...draft.forecast, budgetFullYearEbitda: value })
-              }
+              id="projectionEndYear"
+              label="Plan bitiş yılı"
+              value={draft.projection.endYear}
+              onChange={(value) => patch("projection", { ...draft.projection, endYear: value })}
             />
             <NumberField
-              id="budgetFullYearNetCash"
-              label="Yıllık bütçe — net nakit"
-              value={draft.forecast.budgetFullYearNetCash}
-              onChange={(value) =>
-                patch("forecast", { ...draft.forecast, budgetFullYearNetCash: value })
-              }
+              id="corporateTaxRate"
+              label="Kurumlar vergisi oranı (%)"
+              hint="Girilmezse vergi 0 kabul edilir ve net kâr vergi öncesi tutara eşittir."
+              value={draft.projection.corporateTaxRate}
+              onChange={(value) => patch("projection", { ...draft.projection, corporateTaxRate: value })}
             />
             <NumberField
-              id="remainingMonths"
+              id="openingCash"
+              label="Plan başındaki nakit (TL)"
+              value={draft.projection.openingCash}
+              onChange={(value) => patch("projection", { ...draft.projection, openingCash: value })}
+            />
+            <NumberField
+              id="projectionRemainingMonths"
               label="Kalan ay sayısı"
-              hint="Baz senaryo: yılbaşından bugüne gerçekleşme + kalan aylara run-rate"
-              value={draft.forecast.remainingMonths}
-              onChange={(value) => patch("forecast", { ...draft.forecast, remainingMonths: value })}
-            />
-            <NumberField
-              id="worstCaseDelta"
-              label="Kötümser senaryo sapması (%)"
-              value={draft.forecast.worstCaseDelta}
-              onChange={(value) => patch("forecast", { ...draft.forecast, worstCaseDelta: value })}
-            />
-            <NumberField
-              id="bestCaseDelta"
-              label="İyimser senaryo sapması (%)"
-              value={draft.forecast.bestCaseDelta}
-              onChange={(value) => patch("forecast", { ...draft.forecast, bestCaseDelta: value })}
+              hint="Yalnızca içinde bulunulan yıl seçiliyken gösterilir."
+              value={draft.projection.remainingMonths}
+              onChange={(value) => patch("projection", { ...draft.projection, remainingMonths: value })}
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <NumberField
+              id="worstRevenueDelta"
+              label="Kötümser — gelir sapması (%)"
+              value={draft.projection.worstRevenueDelta}
+              onChange={(value) => patch("projection", { ...draft.projection, worstRevenueDelta: value })}
+            />
+            <NumberField
+              id="worstCostDelta"
+              label="Kötümser — maliyet sapması (%)"
+              value={draft.projection.worstCostDelta}
+              onChange={(value) => patch("projection", { ...draft.projection, worstCostDelta: value })}
+            />
+            <NumberField
+              id="bestRevenueDelta"
+              label="İyimser — gelir sapması (%)"
+              value={draft.projection.bestRevenueDelta}
+              onChange={(value) => patch("projection", { ...draft.projection, bestRevenueDelta: value })}
+            />
+            <NumberField
+              id="bestCostDelta"
+              label="İyimser — maliyet sapması (%)"
+              value={draft.projection.bestCostDelta}
+              onChange={(value) => patch("projection", { ...draft.projection, bestCostDelta: value })}
+            />
+          </div>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-foreground">Ana senaryoya dahil gelir kalemleri</legend>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="size-4 border-border"
+                checked={draft.projection.includeB2cRevenue}
+                onChange={(event) =>
+                  patch("projection", { ...draft.projection, includeB2cRevenue: event.target.checked })
+                }
+              />
+              B2C (ebeveyn) geliri ana senaryoya dahil
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="size-4 border-border"
+                checked={draft.projection.includeInstitutionRevenue}
+                onChange={(event) =>
+                  patch("projection", { ...draft.projection, includeInstitutionRevenue: event.target.checked })
+                }
+              />
+              Kurum lisansı geliri ana senaryoya dahil
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Doğrulanmadıkça kapalı kalır; kapalıyken bu katmanların geliri ve değişken maliyeti ana senaryodan
+              çıkarılır.
+            </p>
+          </fieldset>
           <RepeatTable
-            label="Tahmini etkileyen unsurlar"
-            rows={draft.forecast.drivers}
-            emptyRow={{ name: "", impact: "", note: "" }}
-            onChange={(rows) => patch("forecast", { ...draft.forecast, drivers: rows })}
+            label="Yıl bazlı CAPEX"
+            description="Yatırım nakit çıkışı; girilmeyen yıl için 0 kabul edilir."
+            rows={draft.projection.capexByYear}
+            emptyRow={emptyCapexYearRow}
+            onChange={(rows) => patch("projection", { ...draft.projection, capexByYear: rows })}
             columns={[
-              { key: "name", label: "Unsur", type: "text", width: "25%" },
-              { key: "impact", label: "Etki", type: "text", width: "25%" },
+              { key: "year", label: "Yıl", type: "text", width: "15%" },
+              { key: "amount", label: "Tutar (TL)" },
               { key: "note", label: "Not", type: "text" },
             ]}
           />
+          <RepeatTable
+            label="Yıl bazlı finansman ve borç"
+            description="Finansal maliyet = borç bakiyesi × faiz oranı. Girilmeyen yıl için finansal maliyet 0 kabul edilir."
+            rows={draft.projection.financingByYear}
+            emptyRow={emptyFinancingYearRow}
+            onChange={(rows) => patch("projection", { ...draft.projection, financingByYear: rows })}
+            columns={[
+              { key: "year", label: "Yıl", type: "text", width: "15%" },
+              { key: "debtBalance", label: "Borç bakiyesi (TL)" },
+              { key: "interestRate", label: "Faiz oranı (%)" },
+              { key: "principalRepayment", label: "Anapara ödemesi (TL)" },
+              { key: "newFinancing", label: "Yeni finansman (TL)" },
+            ]}
+          />
         </TabsContent>
+
 
         <TabsContent value="birim" className="space-y-6 border border-border bg-card p-4">
           <RepeatTable
