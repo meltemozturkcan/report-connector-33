@@ -38,6 +38,7 @@ export type VariableCostBreakdown = {
 
 export type FeasibilityPeriod = {
   period: string;
+  stage: string;
   tiers: TierResult[];
   totalAccounts: number;
   subscriptionRevenue: number;
