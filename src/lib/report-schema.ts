@@ -181,6 +181,8 @@ export const reportInputSchema = z.object({
       .array(
         z.object({
           period: text,
+          /** Yılın niteliği: "Ar-Ge, pilot ve ilk satış yılı" veya "Ticari yıl". */
+          stage: text.default(""),
           counts: z.array(num).default([]),
           otherRevenue: num.default(0),
           fixedCostOverride: num.default(0),
