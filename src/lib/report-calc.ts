@@ -308,14 +308,20 @@ export function computeReport(input: ReportInput) {
   const previousUnitEconomics = (unitEconomics[uLast - 1] ?? currentUnitEconomics) as (typeof unitEconomics)[number];
 
   const channelSpend = input.cac.byChannel.reduce((s, c) => s + c.spend, 0);
+  const channelFreeSignups = input.cac.byChannel.reduce((s, c) => s + c.freeSignups, 0);
+  const channelPaidCustomers = input.cac.byChannel.reduce((s, c) => s + c.newCustomers, 0);
   const cacDetail = {
     blendedCac: currentUnitEconomics?.cac ?? 0,
     paybackMonths: currentUnitEconomics?.paybackMonths ?? 0,
     targetPaybackMonths: input.cac.targetPaybackMonths,
+    channelPeriod: input.cac.channelPeriod,
     byChannel: input.cac.byChannel.map((c) => ({
       channel: c.channel,
       spend: c.spend,
+      freeSignups: c.freeSignups,
       newCustomers: c.newCustomers,
+      // Harcamalar bin TL; kazanım maliyetleri müşteri başına TL.
+      freemiumCac: round(safeDiv(c.spend * 1000, c.freeSignups), 0),
       cac: round(safeDiv(c.spend * 1000, c.newCustomers), 0),
       share: round(pct(c.spend, channelSpend)),
     })),
@@ -325,6 +331,11 @@ export function computeReport(input: ReportInput) {
       conversion: i === 0 ? 100 : round(pct(f.count, arr[i - 1]?.count ?? 0)),
     })),
     totalSpend: channelSpend,
+    totalFreeSignups: channelFreeSignups,
+    totalPaidCustomers: channelPaidCustomers,
+    /** Kanal tablosundan türeyen blended değerler. */
+    channelFreemiumCac: round(safeDiv(channelSpend * 1000, channelFreeSignups), 0),
+    channelPaidCac: round(safeDiv(channelSpend * 1000, channelPaidCustomers), 0),
   };
 
   const ltvDetail = {

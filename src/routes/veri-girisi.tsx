@@ -482,15 +482,23 @@ function DataEntryPage() {
             value={draft.cac.targetPaybackMonths}
             onChange={(value) => patch("cac", { ...draft.cac, targetPaybackMonths: value })}
           />
+          <TextField
+            id="channelPeriod"
+            label="Kanal tablosu dönemi"
+            value={draft.cac.channelPeriod}
+            onChange={(value) => patch("cac", { ...draft.cac, channelPeriod: value })}
+          />
           <RepeatTable
             label="Kanal bazlı kazanım"
+            description="Her kanal için harcama, yeni uygun ücretsiz ebeveyn ve yeni ücretli ebeveyn adedi. Freemium ve ücretli kazanım maliyetleri otomatik hesaplanır."
             rows={draft.cac.byChannel}
-            emptyRow={{ channel: "", spend: 0, newCustomers: 0 }}
+            emptyRow={{ channel: "", spend: 0, freeSignups: 0, newCustomers: 0 }}
             onChange={(rows) => patch("cac", { ...draft.cac, byChannel: rows })}
             columns={[
-              { key: "channel", label: "Kanal", type: "text", width: "40%" },
+              { key: "channel", label: "Kanal", type: "text", width: "34%" },
               { key: "spend", label: "Harcama" },
-              { key: "newCustomers", label: "Yeni müşteri" },
+              { key: "freeSignups", label: "Yeni uygun ücretsiz ebeveyn" },
+              { key: "newCustomers", label: "Yeni ücretli ebeveyn" },
             ]}
           />
           <RepeatTable
