@@ -225,7 +225,7 @@ function AcquisitionLtvFallback() {
         />
         <Insight question="Sürdürülebilir mi?">
           Karma LTV {formatAmount(model.blendedLtv)} TL, ücretli CAC{" "}
-          {formatAmount(model.b2cPlan.paidCac, 2)} TL; oran {formatRatio(model.b2cLtvToCac, 1)}. Churn
+          {formatAmount(paidCac, 2)} TL; oran {formatRatio(ratio, 1)}. Churn
           bir puan düşerse beklenen ömür uzar ve aynı CAC ile LTV/CAC doğrudan yükselir.
         </Insight>
       </Section>
