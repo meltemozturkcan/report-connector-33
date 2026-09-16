@@ -12,9 +12,17 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useReportInput } from "@/hooks/useReport";
+import { computeAcquisition } from "@/lib/acquisition-calc";
 import { computeFeasibility, computeFirstYearCosts } from "@/lib/feasibility-calc";
 import { computeReport } from "@/lib/report-calc";
 import {
+  cacBuckets,
+  emptyCacChannelRow,
+  emptyCacItemRow,
+  emptyCohortChannelRow,
+  emptyFixedOpsRow,
+  emptyPerReportCostRow,
+  emptySpendLedgerRow,
   emptyFirstYearCostRow,
   emptyFixedItemRow,
   emptyMonthlyRow,
