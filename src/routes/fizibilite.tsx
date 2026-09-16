@@ -37,6 +37,7 @@ function FeasibilityPage() {
     current,
     fixedBreakdown,
     fixedTotal,
+    firstYearCosts,
     otherRevenueItems,
     otherRevenueCatalogTotal,
     funnelBridge,
@@ -330,6 +331,85 @@ function FeasibilityPage() {
         />
       </Section>
 
+      {firstYearCosts.hasData ? (
+        <Section
+          title={`${firstYearCosts.label} — Ar-Ge maliyeti ve şirket maliyeti ayrımı`}
+          description="Her kalem defterde tek satırda tutulur ve Ar-Ge payı (%) ile bölünür. Ar-Ge payı + şirket payı = kalem tutarı olduğu için aynı gider iki bütçede mükerrer sayılmaz."
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard
+              label="Ar-Ge maliyeti (ilk yıl)"
+              value={`${formatAmount(firstYearCosts.rdTotal)} TL`}
+              note="Kalem tutarı × Ar-Ge payı"
+            />
+            <KpiCard
+              label="Şirket maliyeti (ilk yıl)"
+              value={`${formatAmount(firstYearCosts.companyTotal)} TL`}
+              note="Kalem tutarı × (1 − Ar-Ge payı)"
+            />
+            <KpiCard
+              label="Toplam ilk yıl maliyeti"
+              value={`${formatAmount(firstYearCosts.grandTotal)} TL`}
+              note="Ar-Ge + şirket; mükerrer kayıt yok"
+            />
+            <KpiCard
+              label="Gelir tablosuna yüklenen"
+              value={`${formatAmount(firstYearCosts.firstYearCharge)} TL`}
+              note={`Aktifleştirilen ${formatAmount(firstYearCosts.capitalizedTotal)} TL amortismana bölünür`}
+            />
+          </div>
+
+          <div className="mt-4">
+            <DataTable
+              caption="İlk yıl maliyet defteri"
+              rowKey={(row) => row.name}
+              rows={firstYearCosts.lines}
+              columns={[
+                { header: "Kalem", cell: (row) => row.name || "—" },
+                { header: "Tutar", align: "right", cell: (row) => formatAmount(row.amount) },
+                { header: "Ar-Ge payı", align: "right", cell: (row) => formatPercent(row.rdShareRate) },
+                { header: "Ar-Ge", align: "right", cell: (row) => formatAmount(row.rdAmount) },
+                { header: "Şirket", align: "right", cell: (row) => formatAmount(row.companyAmount) },
+                {
+                  header: "İlk yıl gideri",
+                  align: "right",
+                  cell: (row) => formatAmount(row.firstYearCharge),
+                },
+                {
+                  header: "Muhasebe",
+                  cell: (row) =>
+                    row.capitalized
+                      ? `Aktifleştirildi · ${formatAmount(row.amortizationYears)} yıl`
+                      : "Doğrudan gider",
+                },
+                { header: "Not", cell: (row) => row.note || "—" },
+              ]}
+            />
+          </div>
+
+          {firstYearCosts.duplicateWarnings.length > 0 ? (
+            <ul className="mt-3 space-y-1 text-sm text-destructive">
+              {firstYearCosts.duplicateWarnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Mükerrerlik kontrolü: Ar-Ge ve şirket toplamı {formatAmount(firstYearCosts.grandTotal)} TL
+              defter toplamına eşit; Tablo 4.4-3 ile çakışan kalem bulunmuyor.
+            </p>
+          )}
+
+          <div className="mt-4">
+            <Insight question="Bu ayrım başa başı nasıl etkiliyor?">
+              {firstYearCosts.useForFirstPeriod
+                ? "İlk dönemin sabit maliyeti bu defterden gelir (Ar-Ge + şirket, amortisman sonrası). Sonraki dönemler Tablo 4.4-3 toplamını kullanır; böylece ilk yıl Ar-Ge yükü iki kez sayılmaz."
+                : "Defter yalnızca raporlama amaçlı gösteriliyor; ilk dönemin sabit maliyeti Tablo 4.4-3 toplamından geliyor."}
+            </Insight>
+          </div>
+        </Section>
+      ) : null}
+
       <Section
         title="Başa baş noktası ve dönem sonucu"
         description="Katkı payı = birim fiyat − birim değişken maliyet. BEP adet = sabit maliyet ÷ katkı payı."
@@ -349,6 +429,20 @@ function FeasibilityPage() {
             },
             { header: "BEP (adet)", align: "right", cell: (row) => formatAmount(row.bepAccounts, 1) },
             { header: "BEP (TL)", align: "right", cell: (row) => formatAmount(row.bepRevenue) },
+            {
+              header: "Fiyat %20 düşerse BEP",
+              align: "right",
+              cell: (row) => formatAmount(row.bepAccountsAtPriceDrop, 1),
+            },
+            {
+              header: "Sabit maliyet kaynağı",
+              cell: (row) =>
+                row.fixedCostSource === "override"
+                  ? "Dönem satırı"
+                  : row.fixedCostSource === "firstYear"
+                    ? "İlk yıl defteri"
+                    : "Tablo 4.4-3",
+            },
             {
               header: "Güvenlik payı",
               align: "right",
