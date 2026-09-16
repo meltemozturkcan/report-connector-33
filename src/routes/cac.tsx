@@ -42,7 +42,7 @@ function CacPage() {
   if (!hasReportData) {
     return (
       <AppShell>
-        <EmptyState />
+        {acquisition.hasAcquisitionData ? <AcquisitionCacFallback /> : <EmptyState />}
       </AppShell>
     );
   }
