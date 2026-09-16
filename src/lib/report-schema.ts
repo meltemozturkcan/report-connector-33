@@ -200,7 +200,15 @@ export const reportInputSchema = z.object({
           period: text,
           /** Yılın niteliği: "Ar-Ge, pilot ve ilk satış yılı" veya "Ticari yıl". */
           stage: text.default(""),
+          /** Dönem SONU aktif lisans adedi. counts × fiyat = yıl sonu ARR'dir, yıl içi gelir değildir. */
           counts: z.array(num).default([]),
+          /**
+           * Yıl içi ortalama aktiflik oranı (%). Lisanslar yıl boyunca kazanılıyorsa
+           * dönem geliri = ARR × bu oran. 0 bırakılırsa gelir ARR'ye eşitlenir ve uyarı verilir.
+           */
+          revenueRecognitionRate: num.default(0),
+          /** Belgeli/tahsilat bazlı dönem abonelik geliri. Girilirse ARR ve oran yerine bu kullanılır. */
+          recognizedRevenueOverride: num.default(0),
           otherRevenue: num.default(0),
           fixedCostOverride: num.default(0),
         }),

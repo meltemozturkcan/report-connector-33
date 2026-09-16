@@ -7,6 +7,8 @@ export type PeriodRow = {
   period: string;
   stage: string;
   counts: number[];
+  revenueRecognitionRate: number;
+  recognizedRevenueOverride: number;
   otherRevenue: number;
   fixedCostOverride: number;
 };
@@ -35,7 +37,15 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
   const addRow = () =>
     onChange([
       ...rows,
-      { period: "", stage: "Ticari yıl", counts: tierNames.map(() => 0), otherRevenue: 0, fixedCostOverride: 0 },
+      {
+        period: "",
+        stage: "Ticari yıl",
+        counts: tierNames.map(() => 0),
+        revenueRecognitionRate: 0,
+        recognizedRevenueOverride: 0,
+        otherRevenue: 0,
+        fixedCostOverride: 0,
+      },
     ]);
 
   return (
@@ -43,9 +53,10 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
       <div>
         <h3 className="text-sm font-medium text-foreground">Dönem bazlı aktif lisans adedi</h3>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Her katman için dönem sonu aktif ödeyen lisans sayısını girin. Diğer gelir boş (0) bırakılırsa
-          abonelik dışı gelir kataloğunun toplamı kullanılır; sabit maliyet boş (0) bırakılırsa Tablo 4.4-3
-          toplamı kullanılır.
+          Her katman için dönem SONU aktif ödeyen lisans sayısını girin; bu adet × fiyat yıl sonu ARR'dir.
+          Dönem geliri için ya yıl içi ortalama aktiflik oranını (%) ya da belgeli dönem gelirini yazın;
+          ikisi de boşsa gelir ARR'ye eşitlenir ve uyarı verilir. Diğer gelir boş (0) bırakılırsa abonelik
+          dışı gelir kataloğunun toplamı, sabit maliyet boş (0) bırakılırsa Tablo 4.4-3 toplamı kullanılır.
         </p>
       </div>
 
@@ -71,6 +82,12 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
                     {name || "Katman"}
                   </th>
                 ))}
+                <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Yıl içi aktiflik (%)
+                </th>
+                <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Dönem geliri (TL)
+                </th>
                 <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Diğer gelir (TL)
                 </th>
@@ -113,6 +130,36 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
                       />
                     </td>
                   ))}
+                  <td className="px-1 py-1">
+                    <Input
+                      aria-label={`Yıl içi aktiflik oranı ${index + 1}`}
+                      type="number"
+                      inputMode="decimal"
+                      value={row.revenueRecognitionRate ?? 0}
+                      onChange={(event) =>
+                        update(index, {
+                          revenueRecognitionRate:
+                            event.target.value === "" ? 0 : Number(event.target.value),
+                        })
+                      }
+                      className="h-9 w-24 tabular-nums"
+                    />
+                  </td>
+                  <td className="px-1 py-1">
+                    <Input
+                      aria-label={`Dönem geliri ${index + 1}`}
+                      type="number"
+                      inputMode="decimal"
+                      value={row.recognizedRevenueOverride ?? 0}
+                      onChange={(event) =>
+                        update(index, {
+                          recognizedRevenueOverride:
+                            event.target.value === "" ? 0 : Number(event.target.value),
+                        })
+                      }
+                      className="h-9 w-32 tabular-nums"
+                    />
+                  </td>
                   <td className="px-1 py-1">
                     <Input
                       aria-label={`Diğer gelir ${index + 1}`}

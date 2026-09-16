@@ -118,8 +118,8 @@ function FeasibilityPage() {
       </div>
 
       <Section
-        title="Tablo 4.4-1 — Gelirler"
-        description="Aktif lisans adedi × katman fiyatı; abonelik dışı gelirlerle birlikte toplam gelir."
+        title="Tablo 4.4-1 — Gelirler (ARR ile dönem geliri ayrı)"
+        description="Dönem sonu aktif lisans × yıllık fiyat yıl sonu ARR'dir; gelir tablosuna yazılan dönem geliri ya belgeli tutardan ya yıl içi ortalama aktiflik oranından türetilir. Başa baş ve kâr/zarar hesapları dönem geliriyle yapılır."
       >
         <DataTable
           caption="Dönem bazlı gelirler"
@@ -133,16 +133,38 @@ function FeasibilityPage() {
                 <span className="text-xs text-muted-foreground">{row.stage || "—"}</span>
               ),
             },
-            { header: "Aktif lisans", align: "right", cell: (row) => formatAmount(row.totalAccounts) },
+            { header: "Devreden lisans", align: "right", cell: (row) => formatAmount(row.openingAccounts) },
+            { header: "Net yeni lisans", align: "right", cell: (row) => formatAmount(row.netNewAccounts) },
+            {
+              header: "Dönem sonu aktif lisans",
+              align: "right",
+              cell: (row) => formatAmount(row.totalAccounts),
+            },
             {
               header: "Harmanlanmış fiyat",
               align: "right",
               cell: (row) => formatAmount(row.blendedPrice),
             },
             {
-              header: "Satış geliri",
+              header: "Yıl sonu ARR",
               align: "right",
-              cell: (row) => formatAmount(row.subscriptionRevenue),
+              cell: (row) => formatAmount(row.arr),
+            },
+            {
+              header: "Dönem satış geliri",
+              align: "right",
+              cell: (row) => (
+                <span className="block">
+                  {formatAmount(row.subscriptionRevenue)}
+                  <span className="block text-xs text-muted-foreground">
+                    {row.revenueBasis === "override"
+                      ? "belgeli tutar"
+                      : row.revenueBasis === "recognitionRate"
+                        ? `ARR × ${formatPercent(row.revenueRecognitionRate)} aktiflik`
+                        : "ölçülmeli — ARR'ye eşitlendi"}
+                  </span>
+                </span>
+              ),
             },
             { header: "Diğer gelirler", align: "right", cell: (row) => formatAmount(row.otherRevenue) },
             {
@@ -152,6 +174,7 @@ function FeasibilityPage() {
             },
           ]}
         />
+
         <div className="mt-4">
           <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {current.period} — katman kırılımı

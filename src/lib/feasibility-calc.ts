@@ -41,6 +41,14 @@ export type FeasibilityPeriod = {
   stage: string;
   tiers: TierResult[];
   totalAccounts: number;
+  /** Dönem başı (devreden) aktif lisans ve dönem içi net yeni lisans ihtiyacı. */
+  openingAccounts: number;
+  netNewAccounts: number;
+  /** Yıl sonu ARR = dönem sonu aktif lisans × yıllık fiyat. Gelir tablosu kalemi DEĞİLDİR. */
+  arr: number;
+  /** Dönem geliri hangi temele göre yazıldı. */
+  revenueBasis: "override" | "recognitionRate" | "arr";
+  revenueRecognitionRate: number;
   subscriptionRevenue: number;
   otherRevenue: number;
   totalRevenue: number;
@@ -201,11 +209,31 @@ export function computeFeasibility(input: FeasibilityInput) {
   const periods: FeasibilityPeriod[] = input.periods.map((row, periodIndex) => {
     const counts = tiers.map((_, index) => row.counts[index] ?? 0);
     const totalAccounts = counts.reduce((sum, value) => sum + value, 0);
-    const subscriptionRevenue = tiers.reduce(
-      (sum, tier, index) => sum + (counts[index] ?? 0) * tier.unitPrice,
-      0,
-    );
-    const blendedPrice = safeDiv(subscriptionRevenue, totalAccounts);
+    /** Dönem sonu aktif lisans × yıllık fiyat = yıl sonu ARR. */
+    const arr = tiers.reduce((sum, tier, index) => sum + (counts[index] ?? 0) * tier.unitPrice, 0);
+    const previousRow = periodIndex > 0 ? input.periods[periodIndex - 1] : undefined;
+    const openingAccounts = previousRow
+      ? tiers.reduce((sum, _tier, index) => sum + (previousRow.counts[index] ?? 0), 0)
+      : 0;
+    const netNewAccounts = totalAccounts - openingAccounts;
+    const blendedPrice = safeDiv(arr, totalAccounts);
+    /**
+     * Dönem geliri ARR değildir: lisanslar yıl boyunca kazanıldığı için gelir
+     * ya belgeli tutardan ya da yıl içi ortalama aktiflik oranından türetilir.
+     */
+    const recognitionRate = row.revenueRecognitionRate ?? 0;
+    const revenueBasis: FeasibilityPeriod["revenueBasis"] =
+      (row.recognizedRevenueOverride ?? 0) > 0
+        ? "override"
+        : recognitionRate > 0
+          ? "recognitionRate"
+          : "arr";
+    const subscriptionRevenue =
+      revenueBasis === "override"
+        ? row.recognizedRevenueOverride
+        : revenueBasis === "recognitionRate"
+          ? arr * (recognitionRate / 100)
+          : arr;
     const otherRevenue = row.otherRevenue !== 0 ? row.otherRevenue : otherRevenueCatalogTotal;
     const totalRevenue = subscriptionRevenue + otherRevenue;
 
@@ -315,6 +343,11 @@ export function computeFeasibility(input: FeasibilityInput) {
       bepAccountsAtPriceDrop,
       tiers: tiersWithBep,
       totalAccounts,
+      openingAccounts,
+      netNewAccounts,
+      arr,
+      revenueBasis,
+      revenueRecognitionRate: recognitionRate,
       subscriptionRevenue,
       otherRevenue,
       totalRevenue,
@@ -379,6 +412,12 @@ export function computeFeasibility(input: FeasibilityInput) {
     tiers.length === 0 ? "Katman fiyat listesi (bağımsız / klinik / kurum)" : null,
     periods.length === 0 ? "Dönem bazlı aktif lisans adetleri" : null,
     !firstYearCosts.hasData ? "İlk yıl Ar-Ge ve şirket maliyet defteri" : null,
+    periods.some((period) => period.revenueBasis === "arr" && period.totalAccounts > 0)
+      ? `Dönem geliri temeli: ${periods
+          .filter((period) => period.revenueBasis === "arr" && period.totalAccounts > 0)
+          .map((period) => period.period)
+          .join(", ")} için yıl içi aktiflik oranı veya belgeli dönem geliri girilmedi; gelir geçici olarak yıl sonu ARR'ye eşitlendi`
+      : null,
   ].filter((item): item is string => item !== null);
 
   const hypotheses = otherRevenueItems
