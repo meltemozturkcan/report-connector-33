@@ -550,6 +550,15 @@ export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
 export const emptyNonRevenueRow = { name: "", nature: "", condition: "", amount: 0 };
 export const emptyRevenueChannelRow = { channel: "", start: "", unit: "", driver: "" };
 export const emptyCashCollectionRow = { period: "", pilotCount: 0, pilot: 0, annualCount: 0, annual: 0 };
+export const emptyCapexYearRow = { year: "", amount: 0, note: "" };
+export const emptyFinancingYearRow = {
+  year: "",
+  debtBalance: 0,
+  interestRate: 0,
+  principalRepayment: 0,
+  newFinancing: 0,
+};
+
 export const emptyOtherRevenueRow = { name: "", volume: 0, unitPrice: 0, hypothesis: "" };
 export const emptyFixedItemRow = { name: "", amount: 0 };
 export const emptyFirstYearCostRow = {
