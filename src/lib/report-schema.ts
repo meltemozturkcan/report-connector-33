@@ -279,6 +279,7 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
 export const emptyTierRow = { name: "", unitPrice: 0 };
 export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
 export const emptyNonRevenueRow = { name: "", nature: "", condition: "", amount: 0 };
+export const emptyRevenueChannelRow = { channel: "", start: "", unit: "", driver: "" };
 export const emptyCashCollectionRow = { period: "", pilotCount: 0, pilot: 0, annualCount: 0, annual: 0 };
 export const emptyOtherRevenueRow = { name: "", volume: 0, unitPrice: 0, hypothesis: "" };
 export const emptyFixedItemRow = { name: "", amount: 0 };

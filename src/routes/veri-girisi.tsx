@@ -629,6 +629,7 @@ function DataEntryPage() {
             label="Fiyat listesi (KDV hariç, 2026 baz)"
             description="Referans kataloğu: gelir kalemi, fiyat, birim/dönem ve kapsam koşulu. Hesaplamayı doğrudan etkilemez."
             rows={draft.feasibility.priceCatalog}
+
             emptyRow={emptyPriceCatalogRow}
             onChange={(rows) => patch("feasibility", { ...draft.feasibility, priceCatalog: rows })}
             addLabel="Fiyat kalemi ekle"
