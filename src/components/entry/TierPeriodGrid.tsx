@@ -53,9 +53,10 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
       <div>
         <h3 className="text-sm font-medium text-foreground">Dönem bazlı aktif lisans adedi</h3>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Her katman için dönem sonu aktif ödeyen lisans sayısını girin. Diğer gelir boş (0) bırakılırsa
-          abonelik dışı gelir kataloğunun toplamı kullanılır; sabit maliyet boş (0) bırakılırsa Tablo 4.4-3
-          toplamı kullanılır.
+          Her katman için dönem SONU aktif ödeyen lisans sayısını girin; bu adet × fiyat yıl sonu ARR'dir.
+          Dönem geliri için ya yıl içi ortalama aktiflik oranını (%) ya da belgeli dönem gelirini yazın;
+          ikisi de boşsa gelir ARR'ye eşitlenir ve uyarı verilir. Diğer gelir boş (0) bırakılırsa abonelik
+          dışı gelir kataloğunun toplamı, sabit maliyet boş (0) bırakılırsa Tablo 4.4-3 toplamı kullanılır.
         </p>
       </div>
 
