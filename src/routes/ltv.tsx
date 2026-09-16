@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { useReport } from "@/hooks/useReport";
+import { useAcquisition, useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
@@ -37,11 +37,12 @@ function LtvPage() {
     previousUnitEconomics,
     unitEconomics,
   } = useReport();
+  const acquisition = useAcquisition();
 
   if (!hasReportData) {
     return (
       <AppShell>
-        <EmptyState />
+        {acquisition.hasAcquisitionData ? <AcquisitionLtvFallback /> : <EmptyState />}
       </AppShell>
     );
   }
@@ -161,5 +162,73 @@ function LtvPage() {
         </Insight>
       </Section>
     </AppShell>
+  );
+}
+
+/** Aylık rapor verisi yokken edinim modelinin Basic / Premium birim ekonomisi. */
+function AcquisitionLtvFallback() {
+  const model = useAcquisition();
+  /** Ölçülen (cohort) CAC yoksa plandaki ücretli CAC kullanılır. */
+  const paidCac = model.measuredPaidCac > 0 ? model.measuredPaidCac : model.b2cPlan.paidCac;
+  const ratio = paidCac > 0 ? model.blendedLtv / paidCac : 0;
+  const payback = model.blendedContribution > 0 ? paidCac / model.blendedContribution : 0;
+
+  return (
+    <>
+      <PageHeader
+        title="Müşteri Yaşam Boyu Değeri (LTV)"
+        description="Aylık rapor verisi girilmedi. Aşağıdaki rakamlar B2C birim ekonomisinden hesaplanır: LTV = katkı payı ÷ aylık churn."
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Karma LTV"
+          value={`${formatAmount(model.blendedLtv)} TL`}
+          note={`Karma katkı ${formatAmount(model.blendedContribution, 2)} TL / ay`}
+        />
+        <KpiCard
+          label="Ücretli B2C CAC"
+          value={`${formatAmount(model.b2cPlan.paidCac, 2)} TL`}
+          note={`Ölçülen ${formatAmount(model.measuredPaidCac, 2)} TL`}
+        />
+        <KpiCard
+          label="LTV / CAC"
+          value={formatRatio(ratio, 1)}
+          delta={{ text: "Hedef 3,0x", tone: ratio >= 3 ? "positive" : "negative" }}
+        />
+        <KpiCard
+          label="Geri ödeme süresi"
+          value={`${formatAmount(payback, 1)} ay`}
+          note={`Karma katkı ${formatAmount(model.blendedContribution, 2)} TL / ay`}
+        />
+      </div>
+
+      <Section
+        title="Basic / Premium birim ekonomisi"
+        description="Fiyat, ödeme komisyonu, teknik ve destek maliyeti sonrası katkı payı ile beklenen ömür."
+      >
+        <DataTable
+          caption="Paket bazlı katkı payı ve LTV"
+          rowKey={(row) => row.name}
+          rows={model.packages}
+          columns={[
+            { header: "Paket", cell: (row) => row.name },
+            { header: "Aylık fiyat (TL)", align: "right", cell: (row) => formatAmount(row.monthlyPrice) },
+            { header: "Komisyon (TL)", align: "right", cell: (row) => formatAmount(row.commission, 2) },
+            { header: "Katkı payı (TL)", align: "right", cell: (row) => formatAmount(row.contribution, 2) },
+            { header: "Katkı oranı", align: "right", cell: (row) => formatPercent(row.contributionRate, 1) },
+            { header: "Aylık churn", align: "right", cell: (row) => formatPercent(row.churnRate, 1) },
+            { header: "Beklenen ömür (ay)", align: "right", cell: (row) => formatAmount(row.expectedLifetimeMonths, 1) },
+            { header: "LTV (TL)", align: "right", cell: (row) => formatAmount(row.ltv) },
+            { header: "Karışım payı", align: "right", cell: (row) => formatPercent(row.mixShare, 1) },
+          ]}
+        />
+        <Insight question="Sürdürülebilir mi?">
+          Karma LTV {formatAmount(model.blendedLtv)} TL, ücretli CAC{" "}
+          {formatAmount(paidCac, 2)} TL; oran {formatRatio(ratio, 1)}. Churn
+          bir puan düşerse beklenen ömür uzar ve aynı CAC ile LTV/CAC doğrudan yükselir.
+        </Insight>
+      </Section>
+    </>
   );
 }

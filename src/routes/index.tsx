@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/report/PageHeader";
 import { KpiCard } from "@/components/report/KpiCard";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
+import { ModelSummary, useHasModelData } from "@/components/report/ModelSummary";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -43,11 +44,22 @@ function ExecutiveSummary() {
     previousMonth,
     receivables,
   } = useReport();
+  const hasModelData = useHasModelData();
 
   if (!hasReportData) {
     return (
       <AppShell>
-        <EmptyState />
+        {hasModelData ? (
+          <>
+            <PageHeader
+              title="Yönetici Özeti"
+              description="Aylık rapor verisi henüz girilmedi. Aşağıda fizibilite, ilk yıl maliyeti ve edinim modelinden hesaplanan güncel metrikler yer alır."
+            />
+            <ModelSummary />
+          </>
+        ) : (
+          <EmptyState />
+        )}
       </AppShell>
     );
   }
@@ -172,6 +184,8 @@ function ExecutiveSummary() {
         </dl>
       </Section>
 
+      <ModelSummary />
+
       <nav aria-label="Detay sayfaları" className="flex flex-wrap gap-2 text-sm">
         {[
           { to: "/satis", label: "Satış performansı" },
@@ -182,6 +196,8 @@ function ExecutiveSummary() {
           { to: "/tahmin", label: "Yıl sonu tahmini" },
           { to: "/cac", label: "Müşteri kazanım maliyeti (CAC)" },
           { to: "/ltv", label: "Müşteri yaşam boyu değeri (LTV)" },
+          { to: "/edinim", label: "Edinim ve birim maliyet" },
+          { to: "/fizibilite", label: "Fizibilite / BEP" },
         ].map((item) => (
           <Link
             key={item.to}
