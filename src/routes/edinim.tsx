@@ -401,22 +401,24 @@ function AcquisitionPage() {
       ) : null}
 
       <Section
-        title="Edinim harcaması defteri"
-        description="Her kalem tek satırda ve tek kovada durur; atıf oranı kalemi böler. Atfedilen pay + dağıtılmayan pay = kalem tutarı olduğu için aynı gider iki yerde sayılamaz. Yalnızca CAC kovaları kanal CAC hesabına girer."
+        title="Ham faaliyet gideri defteri"
+        description="Her harcama defterde bir kez girilir; Ana sınıf, Yer ve Atıf oranı ile B2B CAC, B2C CAC, ürün operasyonu veya genel yönetime dağıtılır. Atfedilen pay + dağıtılmayan pay = kalem tutarı olduğu için aynı gider iki yerde sayılmaz ve CAC ikinci kez nakit gider olarak eklenmez."
       >
         <DataTable
-          caption="Edinim harcaması defteri"
+          caption="Ham faaliyet gideri defteri"
           rowKey={(row) => `${row.name}-${row.bucket}-${row.period}`}
           rows={model.ledger}
           columns={[
             { header: "Kalem", cell: (row) => row.name },
+            { header: "Ana sınıf", cell: (row) => row.mainClass || "—" },
+            { header: "Yıllık tutar", align: "right", cell: (row) => tl(row.amount) },
             { header: "Yer", cell: (row) => row.bucket },
-            { header: "Dönem", cell: (row) => row.period || "—" },
-            { header: "Tutar", align: "right", cell: (row) => tl(row.amount) },
+            { header: "Kanal", cell: (row) => row.channel || "—" },
             {
               header: "Atıf oranı",
               align: "right",
-              cell: (row) => formatPercent(row.attributionRate, 0),
+              cell: (row) =>
+                row.attributionRate > 0 ? formatPercent(row.attributionRate, 1) : "Ölçülmeli",
             },
             { header: "Atfedilen", align: "right", cell: (row) => tl(row.attributedAmount) },
             { header: "Dağıtılmayan", align: "right", cell: (row) => tl(row.unallocatedAmount) },
@@ -426,7 +428,29 @@ function AcquisitionPage() {
 
         <div className="mt-4">
           <DataTable
-            caption="Kova bazında toplamlar"
+            caption="Ana sınıf bazında toplamlar"
+            rowKey={(row) => row.mainClass}
+            rows={[
+              ...model.classTotals,
+              {
+                mainClass: "Toplam ham faaliyet gideri",
+                amount: model.rawOpexTotal,
+                attributedAmount: model.classTotals.reduce((s, r) => s + r.attributedAmount, 0),
+                unallocatedAmount: model.classTotals.reduce((s, r) => s + r.unallocatedAmount, 0),
+              },
+            ]}
+            columns={[
+              { header: "Ana sınıf", cell: (row) => row.mainClass },
+              { header: "Yıllık tutar", align: "right", cell: (row) => tl(row.amount) },
+              { header: "Atfedilen", align: "right", cell: (row) => tl(row.attributedAmount) },
+              { header: "Dağıtılmayan", align: "right", cell: (row) => tl(row.unallocatedAmount) },
+            ]}
+          />
+        </div>
+
+        <div className="mt-4">
+          <DataTable
+            caption="Yer (dağıtım) bazında toplamlar"
             rowKey={(row) => row.bucket}
             rows={model.bucketTotals}
             columns={[
@@ -438,6 +462,7 @@ function AcquisitionPage() {
             ]}
           />
         </div>
+
 
         <Insight question="Mükerrerlik nasıl engelleniyor?">
           B2C edinim havuzu {tl(model.b2cCacPool)}, B2B edinim havuzu {tl(model.b2bCacPool)},
