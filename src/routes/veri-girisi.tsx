@@ -1174,6 +1174,40 @@ function DataEntryPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="giderler" className="space-y-6 border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Bu defter genel bir tablodur: şirketin her harcaması burada tek satırda ve tek bir kez
+            girilir. Atıf oranı kalemi böler — örneğin pazarlama personelinin %30'u B2C edinimine
+            ayrılıyorsa yalnız %30'u CAC havuzuna girer. CAC'e girmeyen kalemleri de yazın; doğru
+            yerde (Ürün COGS, Ürün operasyon, Ar-Ge / ürün OPEX, Genel yönetim, Uzman hizmet
+            maliyeti) tutulduklarında kanal CAC'ine karışmazlar. B2B CAC / Yönlendirme CAC
+            kovasındaki satırlarda kanal adını kanal tablosuyla aynı yazın; atfedilen pay kanal
+            CAC'ine oradan gelir, ayrıca CAC alt kalemi eklemeyin. Geçerli yerler:{" "}
+            {cacBuckets.join(", ")}. Tutarlar TL, oranlar %.
+          </p>
+
+          <RepeatTable
+            label="Ham faaliyet gideri defteri"
+            description="Her harcama bir kez girilir; buradan B2B CAC, B2C CAC, ürün operasyonu ve genel yönetime dağıtılır — aynı gider iki kez sayılmaz."
+            rows={draft.acquisition.spendLedger}
+            emptyRow={emptySpendLedgerRow}
+            onChange={(rows) =>
+              patch("acquisition", { ...draft.acquisition, spendLedger: rows })
+            }
+            addLabel="Harcama kalemi ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "20%" },
+              { key: "mainClass", label: "Ana sınıf", type: "text", width: "14%" },
+              { key: "bucket", label: "Yer", type: "text", width: "12%" },
+              { key: "channel", label: "Kanal", type: "text", width: "12%" },
+              { key: "period", label: "Dönem", type: "text", width: "8%" },
+              { key: "amount", label: "Tutar (TL)" },
+              { key: "attributionRate", label: "Atıf oranı (%)" },
+              { key: "note", label: "Not", type: "text", width: "14%" },
+            ]}
+          />
+        </TabsContent>
+
         <TabsContent value="edinim" className="space-y-6 border border-border bg-card p-4">
           <RepeatTable
             label="Ana maliyet katmanları"
