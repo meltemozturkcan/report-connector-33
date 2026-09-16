@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { useReport } from "@/hooks/useReport";
+import { useProjection, useReport } from "@/hooks/useReport";
+import type { ProjectionScenario } from "@/lib/projection-calc";
+
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
