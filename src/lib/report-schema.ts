@@ -260,6 +260,16 @@ export const emptyUnitEconomicsRow: UnitEconomicsInput = {
 
 /** Kaydedilmiş ham JSON'u güvenli biçimde giriş modeline dönüştürür. */
 export function parseReportInput(value: unknown): ReportInput {
-  const result = reportInputSchema.safeParse(value ?? {});
+  // Kayıt kısmi olabilir (yalnızca bir bölüm doldurulmuş olabilir); eksik
+  // bölümler boş varsayılanlarla tamamlanır, böylece girilen veri kaybolmaz.
+  const raw = (value ?? {}) as Record<string, unknown>;
+  const filled: Record<string, unknown> = { ...raw };
+  for (const key of Object.keys(emptyReportInput)) {
+    if (filled[key] === undefined || filled[key] === null) {
+      filled[key] = (emptyReportInput as Record<string, unknown>)[key];
+    }
+  }
+
+  const result = reportInputSchema.safeParse(filled);
   return result.success ? result.data : emptyReportInput;
 }
