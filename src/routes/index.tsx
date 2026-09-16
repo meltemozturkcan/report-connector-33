@@ -47,7 +47,17 @@ function ExecutiveSummary() {
   if (!hasReportData) {
     return (
       <AppShell>
-        <EmptyState />
+        {hasModelData ? (
+          <>
+            <PageHeader
+              title="Yönetici Özeti"
+              description="Aylık rapor verisi henüz girilmedi. Aşağıda fizibilite, ilk yıl maliyeti ve edinim modelinden hesaplanan güncel metrikler yer alır."
+            />
+            <ModelSummary />
+          </>
+        ) : (
+          <EmptyState />
+        )}
       </AppShell>
     );
   }
