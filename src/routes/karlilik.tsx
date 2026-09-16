@@ -40,6 +40,8 @@ function ProfitabilityPage() {
     previousMonth,
     salesBreakdown,
   } = useReport();
+  const projection = useProjection();
+
 
   if (!hasReportData) {
     return (
