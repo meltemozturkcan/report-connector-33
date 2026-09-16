@@ -341,5 +341,7 @@ export function selectScenario(
   view: CollectionView,
 ): ProjectionScenario {
   const list = view === "cash" ? model.scenariosCash : model.scenariosAccrual;
-  return list.find((row) => row.name === scenario) ?? list[1];
+  const found = list.find((row) => row.name === scenario) ?? list[1];
+  return found ?? { name: "Baz", revenueDelta: 0, costDelta: 0, years: [] };
+
 }
