@@ -253,6 +253,92 @@ export const reportInputSchema = z.object({
       })
       .default({}),
   }),
+  /**
+   * Edinim (CAC) ekonomisi.
+   * Mükerrerlik kuralı: her gider kalemi defterde TEK satırda girilir, bir
+   * "yer" (bucket) seçilir ve atıf oranı (%) ile bölünür. Yalnızca CAC
+   * kovalarındaki atfedilmiş paylar kanal CAC hesabına girer; kalan pay
+   * dağıtılmamış olarak görünür. Tutarlar TL, oranlar %.
+   */
+  acquisition: z.object({
+    spendLedger: z
+      .array(
+        z.object({
+          name: text,
+          bucket: text.default(cacBuckets[0]),
+          amount: num.default(0),
+          attributionRate: num.default(100),
+          period: text.default(""),
+          note: text.default(""),
+        }),
+      )
+      .default([]),
+    /** Cohort bazlı freemium kazanım tablosu (Mart, Nisan, Mayıs, Haziran ...). */
+    b2cCohorts: z
+      .array(
+        z.object({
+          cohort: text,
+          channels: z
+            .array(
+              z.object({
+                channel: text,
+                spend: num.default(0),
+                /** Onam + gelişim öyküsü + teknik kalite + paket ekranı görüntüleme. */
+                eligibleFreeParents: num.default(0),
+                paidParents: num.default(0),
+              }),
+            )
+            .default([]),
+        }),
+      )
+      .default([]),
+    b2cUnit: z
+      .object({
+        basicPrice: num.default(0),
+        premiumPrice: num.default(0),
+        paymentCommissionRate: num.default(0),
+        techCostPerUser: num.default(0),
+        supportCostPerUser: num.default(0),
+        basicChurnRate: num.default(0),
+        premiumChurnRate: num.default(0),
+        /** Ücretli portföyde Basic payı (%); Premium payı 100 − Basic. */
+        basicMixRate: num.default(0),
+        /** Ölçülen ücretsizden ücretliye dönüşüm (%). */
+        freeToPaidRate: num.default(0),
+        conversionScenarios: z.array(num).default([10, 15, 20, 25, 30]),
+      })
+      .default({}),
+    b2bLicense: z
+      .object({
+        licensePrice: num.default(0),
+        reportsPerLicense: num.default(0),
+        perReport: z.array(z.object({ name: text, unitCost: num.default(0) })).default([]),
+        /** Çevrim içi tahsil edilen lisans payı (%); EFT/havale payına komisyon uygulanmaz. */
+        onlineCollectionShare: num.default(100),
+        paymentCommissionRate: num.default(0),
+        annualSupportCost: num.default(0),
+        /** Ocak–Aralık aktif lisans adedi; aktif lisans eşdeğeri = toplam ÷ 12. */
+        monthlyActiveLicenses: z.array(num).default([]),
+        fixedOps: z
+          .array(
+            z.object({
+              name: text,
+              annualAmount: num.default(0),
+              /** Karma kullanımlı kalemlerde ürüne atfedilen pay (%). */
+              productShareRate: num.default(100),
+            }),
+          )
+          .default([]),
+        /** CAC alt kalemleri; kanal adı cacChannels ile eşleşir. */
+        cacItems: z
+          .array(z.object({ name: text, channel: text.default(""), amount: num.default(0) }))
+          .default([]),
+        cacChannels: z
+          .array(z.object({ channel: text, newLicenses: num.default(0) }))
+          .default([]),
+      })
+      .default({}),
+  }),
   narrative: z.object({
     notes: z.array(z.object({ text: text })).default([]),
     actions: z.array(z.object({ action: text, owner: text, due: text })).default([]),
