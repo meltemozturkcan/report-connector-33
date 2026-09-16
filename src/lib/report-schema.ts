@@ -102,7 +102,46 @@ export const reportInputSchema = z.object({
       .array(z.object({ name: text, budget: num, actual: num, status: text.default("Devam ediyor") }))
       .default([]),
   }),
+  /**
+   * 2027–2032 projeksiyon merkezi. Sonuçlar elle girilmez; satış, maliyet,
+   * edinim ve finansman sürücülerinden türetilir. Buradaki alanlar yalnızca
+   * sürücüdür (senaryo sapmaları, vergi oranı, dönem başı nakit, CAPEX, borç).
+   */
+  projection: z.object({
+    startYear: num.default(2027),
+    endYear: num.default(2032),
+    /** Senaryo sapmaları (%). Kötümser gelirde eksi, maliyette artı beklenir. */
+    worstRevenueDelta: num.default(-10),
+    worstCostDelta: num.default(10),
+    bestRevenueDelta: num.default(10),
+    bestCostDelta: num.default(-5),
+    /** Kurumlar vergisi oranı (%); girilmeden 0 kalır ve vergi yüklenmez. */
+    corporateTaxRate: num.default(0),
+    /** Plan başlangıcındaki nakit (TL). */
+    openingCash: num.default(0),
+    /** Doğrulanmadıkça ana senaryoya dahil edilmez. */
+    includeB2cRevenue: z.boolean().default(false),
+    includeInstitutionRevenue: z.boolean().default(false),
+    /** Yalnızca içinde bulunulan yıl seçiliyken anlamlıdır. */
+    remainingMonths: num.default(0),
+    capexByYear: z
+      .array(z.object({ year: text, amount: num.default(0), note: text.default("") }))
+      .default([]),
+    financingByYear: z
+      .array(
+        z.object({
+          year: text,
+          debtBalance: num.default(0),
+          interestRate: num.default(0),
+          principalRepayment: num.default(0),
+          newFinancing: num.default(0),
+        }),
+      )
+      .default([]),
+  }),
+  /** @deprecated Yıl sonu bütçe alanları artık elle girilmez; projeksiyondan gelir. */
   forecast: z.object({
+
     budgetFullYearSales: num.default(0),
     budgetFullYearEbitda: num.default(0),
     budgetFullYearNetCash: num.default(0),
