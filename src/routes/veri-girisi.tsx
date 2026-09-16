@@ -562,33 +562,34 @@ function DataEntryPage() {
 
           <div className="flex flex-wrap items-center gap-3 border border-dashed border-border bg-muted/40 px-4 py-3">
             <div className="text-xs leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Morvoi 5 yıllık projeksiyon</strong> — Yıllık Abonelik
-              (19.200 TL/yıl) ve Aylık Abonelik (2.000 TL/ay → 24.000 TL/yıl) katmanlarını ve dönem
-              aktif abone adetlerini tek tıkla yükler. Diğer gelir, maliyet ve huni alanlarını doldurmanız
-              gerekir.
+              <strong className="text-foreground">Altı sütunlu model</strong> — 2027 “Ar-Ge, pilot ve ilk
+              satış yılı” olarak ayrı tutulur; 2028–2032 ticari yıllardır. Düğme yalnızca yıl sütunlarını ve
+              niteliklerini açar, mevcut adetleri korur. Adet, gelir ve maliyet alanlarını kendiniz girersiniz.
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                patch("feasibility", {
-                  ...draft.feasibility,
-                  tiers: [
-                    { name: "Yıllık Abonelik", unitPrice: 19200 },
-                    { name: "Aylık Abonelik", unitPrice: 24000 },
-                  ],
-                  periods: [
-                    { period: "Yıl 1", counts: [5, 10], otherRevenue: 0, fixedCostOverride: 0 },
-                    { period: "Yıl 2", counts: [15, 30], otherRevenue: 0, fixedCostOverride: 0 },
-                    { period: "Yıl 3", counts: [90, 100], otherRevenue: 0, fixedCostOverride: 0 },
-                    { period: "Yıl 4", counts: [120, 150], otherRevenue: 0, fixedCostOverride: 0 },
-                    { period: "Yıl 5", counts: [180, 200], otherRevenue: 0, fixedCostOverride: 0 },
-                  ],
-                })
-              }
+              onClick={() => {
+                const tierCount = Math.max(draft.feasibility.tiers.length, 1);
+                const yearRows = ["2027", "2028", "2029", "2030", "2031", "2032"].map((year) => {
+                  const existing = draft.feasibility.periods.find((row) => row.period === year);
+                  return {
+                    period: year,
+                    stage:
+                      year === "2027" ? "Ar-Ge, pilot ve ilk satış yılı" : "Ticari yıl",
+                    counts: Array.from(
+                      { length: tierCount },
+                      (_, index) => existing?.counts[index] ?? 0,
+                    ),
+                    otherRevenue: existing?.otherRevenue ?? 0,
+                    fixedCostOverride: existing?.fixedCostOverride ?? 0,
+                  };
+                });
+                patch("feasibility", { ...draft.feasibility, periods: yearRows });
+              }}
             >
-              Morvoi projeksiyonunu yükle
+              2027 + 2028–2032 sütunlarını kur
             </Button>
           </div>
 

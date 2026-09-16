@@ -127,6 +127,12 @@ function FeasibilityPage() {
           rows={periods}
           columns={[
             { header: "Dönem", cell: (row) => row.period },
+            {
+              header: "Yılın niteliği",
+              cell: (row) => (
+                <span className="text-xs text-muted-foreground">{row.stage || "—"}</span>
+              ),
+            },
             { header: "Aktif lisans", align: "right", cell: (row) => formatAmount(row.totalAccounts) },
             {
               header: "Harmanlanmış fiyat",

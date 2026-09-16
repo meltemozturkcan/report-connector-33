@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 
 export type PeriodRow = {
   period: string;
+  stage: string;
   counts: number[];
   otherRevenue: number;
   fixedCostOverride: number;
@@ -34,7 +35,7 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
   const addRow = () =>
     onChange([
       ...rows,
-      { period: "", counts: tierNames.map(() => 0), otherRevenue: 0, fixedCostOverride: 0 },
+      { period: "", stage: "Ticari yıl", counts: tierNames.map(() => 0), otherRevenue: 0, fixedCostOverride: 0 },
     ]);
 
   return (
@@ -57,6 +58,9 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
               <tr className="border-b border-border">
                 <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Dönem
+                </th>
+                <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Yılın niteliği
                 </th>
                 {tierNames.map((name) => (
                   <th
@@ -87,6 +91,14 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
                       value={row.period}
                       onChange={(event) => update(index, { period: event.target.value })}
                       className="h-9 w-32"
+                    />
+                  </td>
+                  <td className="px-1 py-1">
+                    <Input
+                      aria-label={`Yılın niteliği ${index + 1}`}
+                      value={row.stage ?? ""}
+                      onChange={(event) => update(index, { stage: event.target.value })}
+                      className="h-9 w-56"
                     />
                   </td>
                   {tierNames.map((name, tierIndex) => (
