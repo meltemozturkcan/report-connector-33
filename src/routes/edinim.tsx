@@ -83,6 +83,321 @@ function AcquisitionPage() {
       ) : null}
 
       <Section
+        title="Ana maliyet katmanları"
+        description="Hangi katmanın B2C CAC'e girdiği tek yerde tanımlanır; bir kalem yalnızca kendi katmanında sayılır."
+      >
+        <DataTable
+          caption="Ana maliyet katmanları"
+          rowKey={(row) => row.layer}
+          rows={model.costLayers}
+          columns={[
+            { header: "Katman", cell: (row) => row.layer },
+            { header: "Kapsam", cell: (row) => row.scope || "—" },
+            { header: "B2C CAC'e girer mi?", cell: (row) => row.cacTreatment || "—" },
+          ]}
+        />
+      </Section>
+
+      <Section
+        title="Sabit işletme bütçesi"
+        description="Yıllık sabit OPEX grupları. CAC tablolarında görünen paylar bu bütçenin B2C'ye tahsis edilmiş kısmıdır; yeni gider değildir."
+      >
+        <DataTable
+          caption="Sabit işletme bütçesi"
+          rowKey={(row) => row.group}
+          rows={[
+            ...model.fixedOpexGroups,
+            { group: "Toplam sabit OPEX", content: "", annualAmount: model.fixedOpexTotal },
+          ]}
+          columns={[
+            { header: "Grup", cell: (row) => row.group },
+            { header: "İçerik", cell: (row) => row.content || "—" },
+            { header: "Yıllık tutar", align: "right", cell: (row) => tl(row.annualAmount) },
+          ]}
+        />
+      </Section>
+
+      {model.costPlacements.length > 0 ? (
+        <Section
+          title="Kalem → doğru maliyet yeri"
+          description="Aynı kalemin iki bütçede sayılmasını engelleyen eşleme listesi."
+        >
+          <DataTable
+            caption="Kalem ve doğru maliyet yeri"
+            rowKey={(row) => row.item}
+            rows={model.costPlacements}
+            columns={[
+              { header: "Kalem", cell: (row) => row.item },
+              { header: "Doğru maliyet yeri", cell: (row) => row.costPlace || "—" },
+            ]}
+          />
+        </Section>
+      ) : null}
+
+      {model.channelMetrics.length > 0 ? (
+        <Section
+          title="Kanal başına ölçülecek metrik"
+          description="Her kanalın paydası aynı tanımla ölçülür: uygun ücretsiz ebeveyn."
+        >
+          <DataTable
+            caption="Kanal metrikleri"
+            rowKey={(row) => row.channel}
+            rows={model.channelMetrics}
+            columns={[
+              { header: "Kanal", cell: (row) => row.channel },
+              { header: "Ölçülecek metrik", cell: (row) => row.metric || "—" },
+            ]}
+          />
+        </Section>
+      ) : null}
+
+      {model.b2cPlan.channels.length > 0 ? (
+        <Section
+          title={`B2C edinim hedefi — ${model.b2cPlan.period || "dönem girilmedi"}`}
+          description="Uygun ücretsiz ebeveyn hedefi kanal bazında. Chatbot ayrı kanal değildir; bu kanallardan gelen ebeveynin ücretsiz akışı tamamlama oranını artıran dönüşüm desteğidir."
+        >
+          <DataTable
+            caption="Kanal bazlı uygun ücretsiz ebeveyn hedefi"
+            rowKey={(row) => row.channel}
+            rows={[
+              ...model.b2cPlan.channels,
+              {
+                channel: "Toplam",
+                eligibleTarget: model.b2cPlan.eligibleTotal,
+                eligibleShare: 100,
+                directCost: model.b2cPlan.directCost,
+                sharedCost: model.b2cPlan.sharedCost,
+                totalCost: model.b2cPlan.pool,
+                plannedCac: model.b2cPlan.freemiumCac,
+              },
+            ]}
+            columns={[
+              { header: "Kanal", cell: (row) => row.channel },
+              {
+                header: "Uygun ücretsiz ebeveyn hedefi",
+                align: "right",
+                cell: (row) => formatAmount(row.eligibleTarget, 0),
+              },
+              { header: "Pay", align: "right", cell: (row) => formatPercent(row.eligibleShare, 1) },
+            ]}
+          />
+        </Section>
+      ) : null}
+
+      {model.b2cPlan.poolItems.length > 0 ? (
+        <Section
+          title="B2C CAC maliyet havuzu"
+          description="Kanala atanmış kalemler doğrudan maliyet, atanmamış kalemler ortak maliyettir. Kâr-zarar maliyeti ile nakit etkisi ayrı sütunlarda durur; peşin ödemeler nakit etkisini yükseltir."
+        >
+          <DataTable
+            caption="B2C CAC maliyet havuzu"
+            rowKey={(row) => row.name}
+            rows={[
+              ...model.b2cPlan.poolItems,
+              {
+                name: "B2C CAC maliyet havuzu",
+                calculation: "",
+                channel: "",
+                isShared: false,
+                pnlAmount: model.b2cPlan.pool,
+                cashAmount: model.b2cPlan.cashPool,
+              },
+            ]}
+            columns={[
+              { header: "Kalem", cell: (row) => row.name },
+              { header: "Hesaplama", cell: (row) => row.calculation || "—" },
+              { header: "Kanal", cell: (row) => row.channel || "Ortak" },
+              { header: "P&L maliyeti", align: "right", cell: (row) => tl(row.pnlAmount) },
+              { header: "Nakit etkisi", align: "right", cell: (row) => tl(row.cashAmount) },
+            ]}
+          />
+        </Section>
+      ) : null}
+
+      {model.b2cPlan.eligibleTotal > 0 ? (
+        <Section
+          title="Freemium CAC hedef testi"
+          description="Hedef CAC üst sınırı ile planlanan havuz karşılaştırılır; tampon küçükse tek bir kalemdeki artış hedefi aşar."
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard label="CAC üst sınırı" value={tl(model.b2cPlan.cacCeiling)} />
+            <KpiCard label="B2C CAC maliyet havuzu" value={tl(model.b2cPlan.pool)} />
+            <KpiCard
+              label="Bütçe tamponu"
+              value={tl(model.b2cPlan.buffer)}
+              delta={{
+                text: model.b2cPlan.buffer >= 0 ? "Hedef içinde" : "Hedef aşıldı",
+                tone: model.b2cPlan.buffer >= 0 ? "positive" : "negative",
+              }}
+            />
+            <KpiCard label="Planlanan freemium CAC" value={tl(model.b2cPlan.freemiumCac, 2)} />
+          </div>
+
+          <div className="mt-4">
+            <DataTable
+              caption="Kanal bazlı maliyet görünümü"
+              rowKey={(row) => row.channel}
+              rows={[
+                ...model.b2cPlan.channels,
+                {
+                  channel: "Toplam",
+                  eligibleTarget: model.b2cPlan.eligibleTotal,
+                  eligibleShare: 100,
+                  directCost: model.b2cPlan.directCost,
+                  sharedCost: model.b2cPlan.sharedCost,
+                  totalCost: model.b2cPlan.pool,
+                  plannedCac: model.b2cPlan.freemiumCac,
+                },
+              ]}
+              columns={[
+                { header: "Kanal", cell: (row) => row.channel },
+                { header: "Doğrudan maliyet", align: "right", cell: (row) => tl(row.directCost) },
+                { header: "Ortak maliyet payı", align: "right", cell: (row) => tl(row.sharedCost) },
+                { header: "Toplam maliyet", align: "right", cell: (row) => tl(row.totalCost) },
+                {
+                  header: "Uygun ücretsiz ebeveyn",
+                  align: "right",
+                  cell: (row) => formatAmount(row.eligibleTarget, 0),
+                },
+                { header: "Planlanan CAC", align: "right", cell: (row) => tl(row.plannedCac, 2) },
+              ]}
+            />
+          </div>
+
+          <Insight
+            title="Hedefi organik kanallar taşıyor"
+            body="Ücretli kanalların planlanan CAC'i hedefin üstünde; toplamı hedefe indiren şey mağaza ve organik içerik kaynaklı düşük maliyetli uygun ebeveyn adedidir. Organik adet gerçekleşmezse hedef CAC varsayımı geçersizdir."
+          />
+        </Section>
+      ) : null}
+
+      {model.b2cPlan.paidParents > 0 ? (
+        <Section
+          title="Ücretsizden ücretliye dönüşüm ve ilk ay geliri"
+          description="Ücretli CAC = planlanan freemium CAC ÷ dönüşüm. Mağaza komisyonu CAC değil, ürün maliyetidir."
+        >
+          <DataTable
+            caption="Dönüşüm ve ilk ay geliri"
+            rowKey={(row) => row.label}
+            rows={[
+              {
+                label: "Uygun ücretsiz ebeveyn",
+                calc: "Kanal hedefleri toplamı",
+                value: formatAmount(model.b2cPlan.eligibleTotal, 0),
+              },
+              {
+                label: "Ücretliye dönüşüm",
+                calc: `${formatAmount(model.b2cPlan.eligibleTotal, 0)} × ${formatPercent(model.b2cPlan.conversionRate, 0)}`,
+                value: formatAmount(model.b2cPlan.paidParents, 2),
+              },
+              {
+                label: "Yeni Basic",
+                calc: "Ücretli × Basic payı",
+                value: formatAmount(model.b2cPlan.basicParents, 2),
+              },
+              {
+                label: "Yeni Premium",
+                calc: "Ücretli × Premium payı",
+                value: formatAmount(model.b2cPlan.premiumParents, 2),
+              },
+              {
+                label: "Basic geliri",
+                calc: "Yeni Basic × Basic fiyatı",
+                value: tl(model.b2cPlan.basicRevenue, 2),
+              },
+              {
+                label: "Premium geliri",
+                calc: "Yeni Premium × Premium fiyatı",
+                value: tl(model.b2cPlan.premiumRevenue, 2),
+              },
+              {
+                label: "İlk ay brüt B2C geliri",
+                calc: "Basic + Premium",
+                value: tl(model.b2cPlan.grossRevenue, 2),
+              },
+              {
+                label: "Ücretli B2C CAC",
+                calc: "Maliyet havuzu ÷ yeni ücretli ebeveyn",
+                value: tl(model.b2cPlan.paidCac, 2),
+              },
+              {
+                label: `Mağaza komisyonu (%${formatAmount(model.b2cPlan.storeCommissionRate, 0)})`,
+                calc: "Mağaza içi tahsilat × komisyon — ürün COGS'u",
+                value: tl(model.b2cPlan.storeCommission, 2),
+              },
+            ]}
+            columns={[
+              { header: "Metrik", cell: (row) => row.label },
+              { header: "Hesap", cell: (row) => row.calc },
+              { header: "Sonuç", align: "right", cell: (row) => row.value },
+            ]}
+          />
+        </Section>
+      ) : null}
+
+      {model.b2cCogs.length > 0 ? (
+        <Section
+          title="B2C ürün maliyeti — CAC'ten ayrı katman"
+          description="Aynı tahsilata hem mağaza komisyonu hem sanal POS komisyonu yazılmaz."
+        >
+          <DataTable
+            caption="B2C ürün maliyeti kalemleri"
+            rowKey={(row) => row.item}
+            rows={model.b2cCogs}
+            columns={[
+              { header: "Kalem", cell: (row) => row.item },
+              { header: "Hesaplama", cell: (row) => row.calculation || "—" },
+              { header: "Durum", cell: (row) => row.layer || "—" },
+            ]}
+          />
+        </Section>
+      ) : null}
+
+      {model.b2cPlan.actuals.length > 0 ? (
+        <Section
+          title={`Dönem sonu kanıt tablosu — ${model.b2cPlan.period || "dönem girilmedi"}`}
+          description="Hedef CAC ancak gerçekleşen harcama ve gerçekleşen uygun ebeveyn adediyle doğrulanmış sayılır."
+        >
+          <DataTable
+            caption="Gerçekleşen freemium CAC"
+            rowKey={(row) => row.channel}
+            rows={[
+              ...model.b2cPlan.actuals,
+              {
+                channel: "Toplam",
+                actualSpend: model.b2cPlan.actualSpend,
+                actualEligible: model.b2cPlan.actualEligible,
+                actualCac: model.b2cPlan.actualCac,
+                chatbotAssistedCompletion: 0,
+              },
+            ]}
+            columns={[
+              { header: "Kanal", cell: (row) => row.channel },
+              { header: "Gerçek harcama", align: "right", cell: (row) => tl(row.actualSpend) },
+              {
+                header: "Uygun ücretsiz ebeveyn",
+                align: "right",
+                cell: (row) => formatAmount(row.actualEligible, 0),
+              },
+              {
+                header: "Gerçek freemium CAC",
+                align: "right",
+                cell: (row) => (row.actualEligible > 0 ? tl(row.actualCac, 2) : "—"),
+              },
+              {
+                header: "Chatbot destekli tamamlanma",
+                align: "right",
+                cell: (row) =>
+                  row.chatbotAssistedCompletion > 0
+                    ? formatAmount(row.chatbotAssistedCompletion, 0)
+                    : "—",
+              },
+            ]}
+          />
+        </Section>
+      ) : null}
+
+      <Section
         title="Edinim harcaması defteri"
         description="Her kalem tek satırda ve tek kovada durur; atıf oranı kalemi böler. Atfedilen pay + dağıtılmayan pay = kalem tutarı olduğu için aynı gider iki yerde sayılamaz. Yalnızca CAC kovaları kanal CAC hesabına girer."
       >
