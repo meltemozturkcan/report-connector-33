@@ -209,11 +209,31 @@ export function computeFeasibility(input: FeasibilityInput) {
   const periods: FeasibilityPeriod[] = input.periods.map((row, periodIndex) => {
     const counts = tiers.map((_, index) => row.counts[index] ?? 0);
     const totalAccounts = counts.reduce((sum, value) => sum + value, 0);
-    const subscriptionRevenue = tiers.reduce(
-      (sum, tier, index) => sum + (counts[index] ?? 0) * tier.unitPrice,
-      0,
-    );
-    const blendedPrice = safeDiv(subscriptionRevenue, totalAccounts);
+    /** Dönem sonu aktif lisans × yıllık fiyat = yıl sonu ARR. */
+    const arr = tiers.reduce((sum, tier, index) => sum + (counts[index] ?? 0) * tier.unitPrice, 0);
+    const previousRow = periodIndex > 0 ? input.periods[periodIndex - 1] : undefined;
+    const openingAccounts = previousRow
+      ? tiers.reduce((sum, _tier, index) => sum + (previousRow.counts[index] ?? 0), 0)
+      : 0;
+    const netNewAccounts = totalAccounts - openingAccounts;
+    const blendedPrice = safeDiv(arr, totalAccounts);
+    /**
+     * Dönem geliri ARR değildir: lisanslar yıl boyunca kazanıldığı için gelir
+     * ya belgeli tutardan ya da yıl içi ortalama aktiflik oranından türetilir.
+     */
+    const recognitionRate = row.revenueRecognitionRate ?? 0;
+    const revenueBasis: FeasibilityPeriod["revenueBasis"] =
+      (row.recognizedRevenueOverride ?? 0) > 0
+        ? "override"
+        : recognitionRate > 0
+          ? "recognitionRate"
+          : "arr";
+    const subscriptionRevenue =
+      revenueBasis === "override"
+        ? row.recognizedRevenueOverride
+        : revenueBasis === "recognitionRate"
+          ? arr * (recognitionRate / 100)
+          : arr;
     const otherRevenue = row.otherRevenue !== 0 ? row.otherRevenue : otherRevenueCatalogTotal;
     const totalRevenue = subscriptionRevenue + otherRevenue;
 
