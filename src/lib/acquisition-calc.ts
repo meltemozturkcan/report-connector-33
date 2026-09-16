@@ -81,6 +81,7 @@ export type B2bFixedOpsLine = {
   productShareRate: number;
   productAmount: number;
   perLicense: number;
+  allocationKey: string;
 };
 
 export type B2bCacChannelResult = {
@@ -247,6 +248,7 @@ export function computeAcquisition(input: AcquisitionInput) {
       productShareRate: clampRate(row.productShareRate),
       productAmount,
       perLicense: safeDiv(productAmount, activeLicenseEquivalent),
+      allocationKey: row.allocationKey,
     };
   });
   const fixedOpsAnnualTotal = fixedOps.reduce((sum, row) => sum + row.productAmount, 0);
