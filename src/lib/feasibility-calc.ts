@@ -48,6 +48,8 @@ export type FeasibilityPeriod = {
   variableCostTotal: number;
   fixedCost: number;
   fixedCostIsOverride: boolean;
+  fixedCostSource: "override" | "firstYear" | "table443";
+  bepAccountsAtPriceDrop: number;
   contribution: number;
   contributionRate: number;
   weightedContribution: number;
@@ -67,12 +69,113 @@ export type FunnelStep = {
   gap: number;
 };
 
+export type FirstYearCostLine = {
+  name: string;
+  amount: number;
+  rdShareRate: number;
+  rdAmount: number;
+  companyAmount: number;
+  capitalized: boolean;
+  amortizationYears: number;
+  firstYearCharge: number;
+  rdCharge: number;
+  companyCharge: number;
+  note: string;
+};
+
+export type FirstYearCostModel = {
+  label: string;
+  hasData: boolean;
+  useForFirstPeriod: boolean;
+  lines: FirstYearCostLine[];
+  /** Nakit/taahhüt bazlı ilk yıl tutarları (aktifleştirme öncesi). */
+  rdTotal: number;
+  companyTotal: number;
+  grandTotal: number;
+  /** İlk yıl gelir tablosuna yüklenen tutarlar (amortisman sonrası). */
+  rdCharge: number;
+  companyCharge: number;
+  firstYearCharge: number;
+  capitalizedTotal: number;
+  /** Mükerrer kayıt uyarıları. */
+  duplicateWarnings: string[];
+};
+
+/**
+ * İlk yıl için Ar-Ge maliyeti ile şirket (işletme) maliyetini ayrı hesaplar.
+ *
+ * Mükerrerlik kuralı: her kalem defterde YALNIZCA bir satırda bulunur ve
+ * Ar-Ge payı (%) ile ikiye bölünür. Ar-Ge payı + şirket payı = kalem tutarı
+ * olduğu için aynı gider iki bütçede birlikte sayılamaz.
+ */
+export function computeFirstYearCosts(input: FeasibilityInput): FirstYearCostModel {
+  const firstYear = input.firstYear;
+  const lines: FirstYearCostLine[] = firstYear.items.map((item) => {
+    const share = Math.min(Math.max(item.rdShareRate, 0), 100) / 100;
+    const rdAmount = item.amount * share;
+    const companyAmount = item.amount - rdAmount;
+    const capitalized = item.amortizationYears > 0;
+    const firstYearCharge = capitalized ? item.amount / item.amortizationYears : item.amount;
+    return {
+      name: item.name,
+      amount: item.amount,
+      rdShareRate: item.rdShareRate,
+      rdAmount,
+      companyAmount,
+      capitalized,
+      amortizationYears: item.amortizationYears,
+      firstYearCharge,
+      rdCharge: firstYearCharge * share,
+      companyCharge: firstYearCharge * (1 - share),
+      note: item.note,
+    };
+  });
+
+  const sum = (pick: (line: FirstYearCostLine) => number) =>
+    lines.reduce((total, line) => total + pick(line), 0);
+
+  const normalized = (value: string) => value.trim().toLocaleLowerCase("tr-TR");
+  const seen = new Map<string, number>();
+  for (const line of lines) {
+    if (!line.name.trim()) continue;
+    const key = normalized(line.name);
+    seen.set(key, (seen.get(key) ?? 0) + 1);
+  }
+  const duplicateWarnings = [
+    ...[...seen.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([key]) => `"${key}" kalemi defterde birden fazla satırda: tek satırda birleştirin.`),
+    ...input.fixed.otherItems
+      .filter((item) => item.name.trim() && seen.has(normalized(item.name)))
+      .map(
+        (item) =>
+          `"${item.name}" hem ilk yıl defterinde hem Tablo 4.4-3 diğer sabit kalemlerinde var: birinden kaldırın.`,
+      ),
+  ];
+
+  return {
+    label: firstYear.label,
+    hasData: lines.length > 0,
+    useForFirstPeriod: firstYear.useForFirstPeriod,
+    lines,
+    rdTotal: sum((line) => line.rdAmount),
+    companyTotal: sum((line) => line.companyAmount),
+    grandTotal: sum((line) => line.amount),
+    rdCharge: sum((line) => line.rdCharge),
+    companyCharge: sum((line) => line.companyCharge),
+    firstYearCharge: sum((line) => line.firstYearCharge),
+    capitalizedTotal: sum((line) => (line.capitalized ? line.amount : 0)),
+    duplicateWarnings,
+  };
+}
+
 export type FeasibilityModel = ReturnType<typeof computeFeasibility>;
 
 export function computeFeasibility(input: FeasibilityInput) {
   const tiers = input.tiers;
   const fixed = input.fixed;
   const variable = input.variable;
+  const firstYearCosts = computeFirstYearCosts(input);
 
   /** Tablo 4.4-3: yıllık toplam sabit maliyet. */
   const fixedBreakdown = {
@@ -94,7 +197,7 @@ export function computeFeasibility(input: FeasibilityInput) {
   }));
   const otherRevenueCatalogTotal = otherRevenueItems.reduce((sum, item) => sum + item.total, 0);
 
-  const periods: FeasibilityPeriod[] = input.periods.map((row) => {
+  const periods: FeasibilityPeriod[] = input.periods.map((row, periodIndex) => {
     const counts = tiers.map((_, index) => row.counts[index] ?? 0);
     const totalAccounts = counts.reduce((sum, value) => sum + value, 0);
     const subscriptionRevenue = tiers.reduce(
@@ -157,7 +260,26 @@ export function computeFeasibility(input: FeasibilityInput) {
     );
 
     const fixedCostIsOverride = row.fixedCostOverride !== 0;
-    const fixedCost = fixedCostIsOverride ? row.fixedCostOverride : fixedTotal;
+    /**
+     * İlk dönem sabit maliyeti: ilk yıl defteri doldurulmuşsa oradan gelir
+     * (Ar-Ge + şirket, amortisman sonrası). Böylece Tablo 4.4-3 ile ilk yıl
+     * defteri aynı gideri iki kez yüklemez.
+     */
+    const useFirstYearLedger =
+      periodIndex === 0 &&
+      !fixedCostIsOverride &&
+      firstYearCosts.hasData &&
+      firstYearCosts.useForFirstPeriod;
+    const fixedCost = fixedCostIsOverride
+      ? row.fixedCostOverride
+      : useFirstYearLedger
+        ? firstYearCosts.firstYearCharge
+        : fixedTotal;
+    const fixedCostSource: FeasibilityPeriod["fixedCostSource"] = fixedCostIsOverride
+      ? "override"
+      : useFirstYearLedger
+        ? "firstYear"
+        : "table443";
 
     const contribution = blendedPrice - variableBreakdown.total;
     /** Katman karışımı sabit tutularak ağırlıklı katkı payı. */
@@ -178,8 +300,17 @@ export function computeFeasibility(input: FeasibilityInput) {
         ? tiersWithBep.reduce((sum, tier) => sum + tier.bepAccounts * tier.unitPrice, 0)
         : bepAccounts * blendedPrice;
 
+    /** Duyarlılık: fiyat %20 düşerse başa baş adedi. Komisyon fiyata bağlı olduğu için yeniden hesaplanır. */
+    const droppedPrice = blendedPrice * 0.8;
+    const droppedVariable =
+      variableBreakdown.total - commissionRate * blendedPrice + commissionRate * droppedPrice;
+    const droppedContribution = droppedPrice - droppedVariable;
+    const bepAccountsAtPriceDrop = droppedContribution > 0 ? fixedCost / droppedContribution : 0;
+
     return {
       period: row.period,
+      fixedCostSource,
+      bepAccountsAtPriceDrop,
       tiers: tiersWithBep,
       totalAccounts,
       subscriptionRevenue,
@@ -245,6 +376,7 @@ export function computeFeasibility(input: FeasibilityInput) {
     fixed.annualRent === 0 ? "Ofis kirası (varsa)" : null,
     tiers.length === 0 ? "Katman fiyat listesi (bağımsız / klinik / kurum)" : null,
     periods.length === 0 ? "Dönem bazlı aktif lisans adetleri" : null,
+    !firstYearCosts.hasData ? "İlk yıl Ar-Ge ve şirket maliyet defteri" : null,
   ].filter((item): item is string => item !== null);
 
   const hypotheses = otherRevenueItems
@@ -261,6 +393,7 @@ export function computeFeasibility(input: FeasibilityInput) {
     first,
     fixedBreakdown,
     fixedTotal,
+    firstYearCosts,
     otherRevenueItems,
     otherRevenueCatalogTotal,
     funnelBridge,

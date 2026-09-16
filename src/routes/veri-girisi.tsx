@@ -7,12 +7,15 @@ import { PageHeader } from "@/components/report/PageHeader";
 import { NumberField, RepeatTable, TextField } from "@/components/entry/fields";
 import { TierPeriodGrid } from "@/components/entry/TierPeriodGrid";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useReportInput } from "@/hooks/useReport";
-import { computeFeasibility } from "@/lib/feasibility-calc";
+import { computeFeasibility, computeFirstYearCosts } from "@/lib/feasibility-calc";
 import { computeReport } from "@/lib/report-calc";
 import {
+  emptyFirstYearCostRow,
   emptyFixedItemRow,
   emptyMonthlyRow,
   emptyOtherRevenueRow,
@@ -57,6 +60,7 @@ function DataEntryPage() {
 
   const preview = computeReport(draft);
   const feasibilityPreview = computeFeasibility(draft.feasibility);
+  const firstYearPreview = computeFirstYearCosts(draft.feasibility);
 
   const patch = <K extends keyof ReportInput>(key: K, value: ReportInput[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
@@ -138,6 +142,7 @@ function DataEntryPage() {
           <TabsTrigger value="tahmin">Yıl sonu tahmini</TabsTrigger>
           <TabsTrigger value="birim">CAC / LTV</TabsTrigger>
           <TabsTrigger value="fizibilite">Fizibilite / BEP</TabsTrigger>
+          <TabsTrigger value="ilkyil">İlk yıl Ar-Ge / şirket</TabsTrigger>
           <TabsTrigger value="yorum">Yorum ve aksiyon</TabsTrigger>
 
         </TabsList>
@@ -952,6 +957,108 @@ function DataEntryPage() {
                 Katman fiyatlarını ve en az bir dönem adedini girdiğinizde hesaplama burada görünür.
               </p>
             )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ilkyil" className="space-y-6 border border-border bg-card p-4">
+          <div className="border-l-2 border-accent-foreground/40 bg-muted/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+            İlk yıl için <strong className="text-foreground">Ar-Ge maliyeti</strong> ve{" "}
+            <strong className="text-foreground">şirket (işletme) maliyeti</strong> ayrı hesaplanır. Her
+            kalemi <strong className="text-foreground">yalnızca bir satıra</strong> yazın ve Ar-Ge payını
+            yüzde olarak belirtin; kalan kısım otomatik olarak şirket maliyetine gider. Ar-Ge payı + şirket
+            payı = kalem tutarı olduğu için mükerrer kayıt oluşmaz. Tutarlar TL.
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              id="firstYearLabel"
+              label="Dönem adı"
+              placeholder="Örn. Yıl 1"
+              value={draft.feasibility.firstYear.label}
+              onChange={(value) =>
+                patch("feasibility", {
+                  ...draft.feasibility,
+                  firstYear: { ...draft.feasibility.firstYear, label: value },
+                })
+              }
+            />
+            <div className="flex items-start gap-3 pt-6">
+              <Checkbox
+                id="useForFirstPeriod"
+                checked={draft.feasibility.firstYear.useForFirstPeriod}
+                onCheckedChange={(checked) =>
+                  patch("feasibility", {
+                    ...draft.feasibility,
+                    firstYear: {
+                      ...draft.feasibility.firstYear,
+                      useForFirstPeriod: checked === true,
+                    },
+                  })
+                }
+              />
+              <Label htmlFor="useForFirstPeriod" className="text-xs leading-relaxed text-muted-foreground">
+                İlk dönemin sabit maliyeti bu defterden gelsin (Tablo 4.4-3 yerine). Böylece ilk yıl Ar-Ge
+                yükü iki kez sayılmaz.
+              </Label>
+            </div>
+          </div>
+
+          <RepeatTable
+            label="İlk yıl maliyet defteri"
+            description="Ar-Ge payı: %100 tamamen Ar-Ge, %0 tamamen şirket, arası paylaşımlı kalem. Amortisman yılı 0 ise tutar ilk yıl doğrudan gider yazılır; 0'dan büyükse aktifleştirilip faydalı ömre bölünür."
+            rows={draft.feasibility.firstYear.items}
+            emptyRow={emptyFirstYearCostRow}
+            onChange={(rows) =>
+              patch("feasibility", {
+                ...draft.feasibility,
+                firstYear: { ...draft.feasibility.firstYear, items: rows },
+              })
+            }
+            addLabel="Maliyet kalemi ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "26%" },
+              { key: "amount", label: "İlk yıl tutarı (TL)" },
+              { key: "rdShareRate", label: "Ar-Ge payı (%)" },
+              { key: "amortizationYears", label: "Amortisman (yıl)" },
+              { key: "note", label: "Not", type: "text", width: "22%" },
+            ]}
+          />
+
+          <div className="border border-border bg-muted/40 px-4 py-3">
+            <h3 className="text-sm font-medium text-foreground">Anlık ayrım</h3>
+            <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Ar-Ge maliyeti</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(firstYearPreview.rdTotal)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Şirket maliyeti</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(firstYearPreview.companyTotal)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Toplam</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(firstYearPreview.grandTotal)} TL
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">İlk yıl gideri</dt>
+                <dd className="font-medium tabular-nums">
+                  {formatAmount(firstYearPreview.firstYearCharge)} TL
+                </dd>
+              </div>
+            </dl>
+            {firstYearPreview.duplicateWarnings.length > 0 ? (
+              <ul className="mt-3 space-y-1 text-sm text-destructive">
+                {firstYearPreview.duplicateWarnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </TabsContent>
 

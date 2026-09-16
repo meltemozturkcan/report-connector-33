@@ -155,6 +155,30 @@ export const reportInputSchema = z.object({
         otherVariablePerAccount: num.default(0),
       })
       .default({}),
+    /**
+     * İlk yıl maliyet defteri.
+     * Her kalem TEK satırda girilir; Ar-Ge payı (%) kalemi Ar-Ge ile şirket
+     * bütçesi arasında böler. Böylece aynı gider iki bütçede mükerrer yazılamaz.
+     * amortizationYears = 0 → ilk yıl gider yazılır, > 0 → aktifleştirilip
+     * faydalı ömre bölünür (ilk yıl yalnızca bir yıllık amortisman yüklenir).
+     */
+    firstYear: z
+      .object({
+        label: text.default("Yıl 1"),
+        useForFirstPeriod: z.coerce.boolean().default(true),
+        items: z
+          .array(
+            z.object({
+              name: text,
+              amount: num,
+              rdShareRate: num.default(0),
+              amortizationYears: num.default(0),
+              note: text.default(""),
+            }),
+          )
+          .default([]),
+      })
+      .default({}),
     fixed: z
       .object({
         equipmentInvestment: num.default(0),
@@ -194,6 +218,13 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
 export const emptyTierRow = { name: "", unitPrice: 0 };
 export const emptyOtherRevenueRow = { name: "", volume: 0, unitPrice: 0, hypothesis: "" };
 export const emptyFixedItemRow = { name: "", amount: 0 };
+export const emptyFirstYearCostRow = {
+  name: "",
+  amount: 0,
+  rdShareRate: 0,
+  amortizationYears: 0,
+  note: "",
+};
 
 
 export const emptyMonthlyRow: MonthlyInput = {
