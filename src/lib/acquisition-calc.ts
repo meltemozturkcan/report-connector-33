@@ -280,10 +280,28 @@ export function computeAcquisition(input: AcquisitionInput) {
   const fixedOpsPerLicense = safeDiv(fixedOpsAnnualTotal, activeLicenseEquivalent);
   const fullCostBeforeCac = directAccountCost + fixedOpsPerLicense;
 
+  /**
+   * B2B/yönlendirme CAC'i önce ham gider defterinden izlenir: defterde B2B CAC
+   * veya Yönlendirme CAC kovasına atfedilmiş ve kanalı yazılmış paylar kanal
+   * harcaması olur. cacItems yalnızca defterde satırı olmayan kalemler içindir;
+   * böylece aynı nakit gider ikinci kez CAC olarak eklenmez.
+   */
+  const ledgerCacLines = ledger.filter(
+    (line) =>
+      (line.bucket === "B2B CAC" || line.bucket === "Yönlendirme CAC") &&
+      line.attributedAmount > 0,
+  );
   const cacChannels: B2bCacChannelResult[] = b2b.cacChannels.map((channel) => {
-    const items = b2b.cacItems
-      .filter((item) => item.channel.trim() === channel.channel.trim())
-      .map((item) => ({ name: item.name, amount: item.amount }));
+    const key = channel.channel.trim();
+    const ledgerItems = ledgerCacLines
+      .filter((line) => line.channel.trim() === key)
+      .map((line) => ({ name: `${line.name} (ham gider defterinden)`, amount: line.attributedAmount }));
+    const items = [
+      ...ledgerItems,
+      ...b2b.cacItems
+        .filter((item) => item.channel.trim() === key)
+        .map((item) => ({ name: item.name, amount: item.amount })),
+    ];
     const spend = items.reduce((sum, item) => sum + item.amount, 0);
     return {
       channel: channel.channel,
@@ -293,10 +311,14 @@ export function computeAcquisition(input: AcquisitionInput) {
       items,
     };
   });
-  const unassignedCacItems = b2b.cacItems.filter(
-    (item) =>
-      !b2b.cacChannels.some((channel) => channel.channel.trim() === item.channel.trim()),
-  );
+  const unassignedCacItems = [
+    ...b2b.cacItems.filter(
+      (item) => !b2b.cacChannels.some((channel) => channel.channel.trim() === item.channel.trim()),
+    ),
+    ...ledgerCacLines
+      .filter((line) => !b2b.cacChannels.some((channel) => channel.channel.trim() === line.channel.trim()))
+      .map((line) => ({ name: line.name, channel: line.channel, amount: line.attributedAmount })),
+  ];
   const b2bCacSpend = cacChannels.reduce((sum, row) => sum + row.spend, 0);
   const b2bNewLicenses = cacChannels.reduce((sum, row) => sum + row.newLicenses, 0);
   const weightedB2bCac = safeDiv(b2bCacSpend, b2bNewLicenses);
