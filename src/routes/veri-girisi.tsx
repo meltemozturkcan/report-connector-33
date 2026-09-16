@@ -147,6 +147,8 @@ function DataEntryPage() {
           <TabsTrigger value="birim">CAC / LTV</TabsTrigger>
           <TabsTrigger value="fizibilite">Fizibilite / BEP</TabsTrigger>
           <TabsTrigger value="ilkyil">İlk yıl Ar-Ge / şirket</TabsTrigger>
+          <TabsTrigger value="edinim">Edinim (B2C)</TabsTrigger>
+          <TabsTrigger value="b2b">B2B lisans maliyeti</TabsTrigger>
           <TabsTrigger value="yorum">Yorum ve aksiyon</TabsTrigger>
 
         </TabsList>
