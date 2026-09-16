@@ -38,6 +38,21 @@ import {
 } from "@/lib/report-schema";
 import { formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
+const monthLabels = [
+  "Ocak",
+  "Şubat",
+  "Mart",
+  "Nisan",
+  "Mayıs",
+  "Haziran",
+  "Temmuz",
+  "Ağustos",
+  "Eylül",
+  "Ekim",
+  "Kasım",
+  "Aralık",
+];
+
 export const Route = createFileRoute("/veri-girisi")({
   head: () => ({
     meta: [
@@ -73,6 +88,7 @@ function DataEntryPage() {
   const preview = computeReport(draft);
   const feasibilityPreview = computeFeasibility(draft.feasibility);
   const firstYearPreview = computeFirstYearCosts(draft.feasibility);
+  const acquisitionPreview = computeAcquisition(draft.acquisition);
 
   const patch = <K extends keyof ReportInput>(key: K, value: ReportInput[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
