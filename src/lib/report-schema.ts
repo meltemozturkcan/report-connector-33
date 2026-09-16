@@ -341,8 +341,13 @@ export const reportInputSchema = z.object({
             z.object({
               name: text,
               annualAmount: num.default(0),
-              /** Karma kullanımlı kalemlerde ürüne atfedilen pay (%). */
-              productShareRate: num.default(100),
+              /**
+               * Karma kullanımlı kalemlerde ürüne atfedilen pay (%). Kanıt
+               * (dağıtım anahtarı) ölçülmeden 0 kalır; senaryo olarak yazılmaz.
+               */
+              productShareRate: num.default(0),
+              /** Payın hangi kanıtla belirleneceği (ör. saat kaydı, kullanım payı). */
+              allocationKey: text.default(""),
             }),
           )
           .default([]),
@@ -454,7 +459,12 @@ export const emptyCohortChannelRow = {
   paidParents: 0,
 };
 export const emptyPerReportCostRow = { name: "", unitCost: 0 };
-export const emptyFixedOpsRow = { name: "", annualAmount: 0, productShareRate: 100 };
+export const emptyFixedOpsRow = {
+  name: "",
+  annualAmount: 0,
+  productShareRate: 0,
+  allocationKey: "",
+};
 export const emptyCacItemRow = { name: "", channel: "", amount: 0 };
 export const emptyCacChannelRow = { channel: "", newLicenses: 0 };
 export const emptyCostLayerRow = { layer: "", scope: "", cacTreatment: "" };
