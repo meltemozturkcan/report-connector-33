@@ -656,14 +656,15 @@ function AcquisitionPage() {
           caption="Sabit ürün operasyon maliyeti"
           rowKey={(row) => row.name}
           rows={[
-            ...b2b.fixedOps,
+            ...b2b.fixedOps.map((row) => ({ ...row, isTotal: false })),
             {
               name: "Toplam ürün operasyon maliyeti",
               annualAmount: b2b.fixedOps.reduce((sum, row) => sum + row.annualAmount, 0),
-              productShareRate: 100,
+              productShareRate: 0,
               productAmount: b2b.fixedOpsAnnualTotal,
               perLicense: b2b.fixedOpsPerLicense,
               allocationKey: "",
+              isTotal: true,
             },
           ]}
           columns={[
@@ -677,7 +678,11 @@ function AcquisitionPage() {
               header: "Ürün kullanım payı",
               align: "right",
               cell: (row) =>
-                row.productShareRate > 0 ? formatPercent(row.productShareRate, 0) : "Ölçülmeli",
+                row.isTotal
+                  ? "—"
+                  : row.productShareRate > 0
+                    ? formatPercent(row.productShareRate, 0)
+                    : "Ölçülmeli",
             },
             { header: "Ürüne düşen", align: "right", cell: (row) => tl(row.productAmount) },
             { header: "Lisans başına", align: "right", cell: (row) => tl(row.perLicense, 2) },
