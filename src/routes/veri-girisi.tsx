@@ -172,6 +172,8 @@ function DataEntryPage() {
           <TabsTrigger value="genel">Genel</TabsTrigger>
           <TabsTrigger value="aylik">Aylık veriler</TabsTrigger>
           <TabsTrigger value="satis">Satış</TabsTrigger>
+          <TabsTrigger value="fiyat">Fiyat ve gelir kanalları</TabsTrigger>
+
           <TabsTrigger value="butce">Bütçe</TabsTrigger>
           <TabsTrigger value="nakit">İşletme sermayesi</TabsTrigger>
           <TabsTrigger value="finansman">Borç ve CAPEX</TabsTrigger>
