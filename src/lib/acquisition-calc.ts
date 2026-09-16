@@ -409,10 +409,20 @@ export function computeAcquisition(input: AcquisitionInput) {
     cohorts.length > 0 ||
     b2b.licensePrice > 0 ||
     unit.basicPrice > 0 ||
-    unit.premiumPrice > 0;
+    unit.premiumPrice > 0 ||
+    plan.channels.length > 0 ||
+    input.costLayers.length > 0 ||
+    fixedOpexGroups.length > 0;
 
   return {
     hasAcquisitionData,
+    b2cPlan,
+    costLayers: input.costLayers,
+    costPlacements: input.costPlacements,
+    channelMetrics: input.channelMetrics,
+    b2cCogs: input.b2cCogs,
+    fixedOpexGroups,
+    fixedOpexTotal,
     ledger,
     bucketTotals,
     b2cCacPool,
