@@ -184,6 +184,8 @@ function ExecutiveSummary() {
         </dl>
       </Section>
 
+      <ModelSummary />
+
       <nav aria-label="Detay sayfaları" className="flex flex-wrap gap-2 text-sm">
         {[
           { to: "/satis", label: "Satış performansı" },
@@ -194,6 +196,8 @@ function ExecutiveSummary() {
           { to: "/tahmin", label: "Yıl sonu tahmini" },
           { to: "/cac", label: "Müşteri kazanım maliyeti (CAC)" },
           { to: "/ltv", label: "Müşteri yaşam boyu değeri (LTV)" },
+          { to: "/edinim", label: "Edinim ve birim maliyet" },
+          { to: "/fizibilite", label: "Fizibilite / BEP" },
         ].map((item) => (
           <Link
             key={item.to}
