@@ -485,6 +485,8 @@ export function computeAcquisition(input: AcquisitionInput) {
     fixedOpexTotal,
     ledger,
     bucketTotals,
+    classTotals,
+    rawOpexTotal,
     b2cCacPool,
     b2bCacPool,
     referralCacPool,
