@@ -143,6 +143,17 @@ export const reportInputSchema = z.object({
         }),
       )
       .default([]),
+    /** Gelir kanalları haritası: kanal, başlangıç zamanı, gelir birimi ve ana sürücü. */
+    revenueChannels: z
+      .array(
+        z.object({
+          channel: text,
+          start: text.default(""),
+          unit: text.default(""),
+          driver: text.default(""),
+        }),
+      )
+      .default([]),
     /** Gelir olmayan veya geliri azaltan kalemler (ücretsiz pilot, indirimler, üçüncü taraf bedeli). */
     nonRevenueItems: z
       .array(
