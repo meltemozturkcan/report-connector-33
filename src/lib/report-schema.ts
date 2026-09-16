@@ -97,7 +97,20 @@ export const reportInputSchema = z.object({
   unitEconomics: z.array(unitEconomicsInputSchema).default([]),
   cac: z.object({
     targetPaybackMonths: num.default(12),
-    byChannel: z.array(z.object({ channel: text, spend: num, newCustomers: num })).default([]),
+    /** Kanal tablosunun ait olduğu dönem etiketi (örn. "Mart 2028"). */
+    channelPeriod: text.default(""),
+    byChannel: z
+      .array(
+        z.object({
+          channel: text,
+          spend: num,
+          /** Yeni uygun ücretsiz ebeveyn (freemium kayıt). */
+          freeSignups: num.default(0),
+          /** Yeni ücretli ebeveyn. */
+          newCustomers: num,
+        }),
+      )
+      .default([]),
     funnel: z.array(z.object({ stage: text, count: num })).default([]),
   }),
   ltv: z.object({
