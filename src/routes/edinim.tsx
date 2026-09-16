@@ -264,10 +264,13 @@ function AcquisitionPage() {
             />
           </div>
 
-          <Insight
-            title="Hedefi organik kanallar taşıyor"
-            body="Ücretli kanalların planlanan CAC'i hedefin üstünde; toplamı hedefe indiren şey mağaza ve organik içerik kaynaklı düşük maliyetli uygun ebeveyn adedidir. Organik adet gerçekleşmezse hedef CAC varsayımı geçersizdir."
-          />
+          <div className="mt-4">
+            <Insight question="Hedefi hangi kanal taşıyor?">
+              Ücretli kanalların planlanan CAC'i hedefin üstünde; toplamı hedefe indiren şey mağaza
+              ve organik içerik kaynaklı düşük maliyetli uygun ebeveyn adedidir. Organik adet
+              gerçekleşmezse hedef CAC varsayımı geçersizdir.
+            </Insight>
+          </div>
         </Section>
       ) : null}
 
