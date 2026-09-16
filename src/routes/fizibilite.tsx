@@ -42,6 +42,7 @@ function FeasibilityPage() {
     otherRevenueCatalogTotal,
     priceCatalog,
     nonRevenueItems,
+    cashCollections,
     funnelBridge,
     funnelAssumptions,
     missingInputs,
@@ -52,13 +53,14 @@ function FeasibilityPage() {
   if (!hasFeasibilityData || !current) {
     return (
       <AppShell>
-        {priceCatalog.length > 0 || nonRevenueItems.length > 0 ? (
+        {priceCatalog.length > 0 || nonRevenueItems.length > 0 || cashCollections.length > 0 ? (
           <>
             <PageHeader
               title="Fizibilite ve Başa Baş Analizi"
               description="Fiyat listesi girildi. Başa baş hesabı için katman adetleri ve maliyet varsayımları da gerekiyor."
             />
             <PriceCatalogSection priceCatalog={priceCatalog} nonRevenueItems={nonRevenueItems} />
+            <CashCollectionSection rows={cashCollections} />
           </>
         ) : (
           <EmptyState />
@@ -190,6 +192,7 @@ function FeasibilityPage() {
       </Section>
 
       <PriceCatalogSection priceCatalog={priceCatalog} nonRevenueItems={nonRevenueItems} />
+      <CashCollectionSection rows={cashCollections} />
 
 
       <Section
