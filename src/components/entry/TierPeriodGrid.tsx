@@ -82,6 +82,12 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
                   </th>
                 ))}
                 <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Yıl içi aktiflik (%)
+                </th>
+                <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Dönem geliri (TL)
+                </th>
+                <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Diğer gelir (TL)
                 </th>
                 <th scope="col" className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
