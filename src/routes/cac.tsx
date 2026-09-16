@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { useReport } from "@/hooks/useReport";
+import { useAcquisition, useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
@@ -38,6 +38,7 @@ function CacPage() {
     previousUnitEconomics,
     unitEconomics,
   } = useReport();
+  const acquisition = useAcquisition();
 
   if (!hasReportData) {
     return (
