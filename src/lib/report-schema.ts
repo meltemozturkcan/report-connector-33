@@ -290,7 +290,11 @@ export const reportInputSchema = z.object({
       .array(
         z.object({
           name: text,
+          /** Ana sınıf (ör. Ürün operasyonu, Satış / pazarlama, Genel yönetim). Yalnızca gruplama içindir. */
+          mainClass: text.default(""),
           bucket: text.default(cacBuckets[0]),
+          /** CAC kovalarında atfedilen payın hangi kanala yazıldığı (kanal tablosuyla aynı ad). */
+          channel: text.default(""),
           amount: num.default(0),
           attributionRate: num.default(100),
           period: text.default(""),
@@ -454,7 +458,9 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
 
 export const emptySpendLedgerRow = {
   name: "",
+  mainClass: "",
   bucket: cacBuckets[0],
+  channel: "",
   amount: 0,
   attributionRate: 100,
   period: "",
