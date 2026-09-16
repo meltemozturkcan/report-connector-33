@@ -457,6 +457,25 @@ export const emptyPerReportCostRow = { name: "", unitCost: 0 };
 export const emptyFixedOpsRow = { name: "", annualAmount: 0, productShareRate: 100 };
 export const emptyCacItemRow = { name: "", channel: "", amount: 0 };
 export const emptyCacChannelRow = { channel: "", newLicenses: 0 };
+export const emptyCostLayerRow = { layer: "", scope: "", cacTreatment: "" };
+export const emptyFixedOpexGroupRow = { group: "", content: "", annualAmount: 0 };
+export const emptyCostPlacementRow = { item: "", costPlace: "" };
+export const emptyChannelMetricRow = { channel: "", metric: "" };
+export const emptyB2cCogsRow = { item: "", calculation: "", layer: "" };
+export const emptyPlanChannelRow = { channel: "", eligibleTarget: 0 };
+export const emptyPlanPoolItemRow = {
+  name: "",
+  calculation: "",
+  channel: "",
+  pnlAmount: 0,
+  cashAmount: 0,
+};
+export const emptyPlanActualRow = {
+  channel: "",
+  actualSpend: 0,
+  actualEligible: 0,
+  chatbotAssistedCompletion: 0,
+};
 
 export const emptyTierRow = { name: "", unitPrice: 0 };
 export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
