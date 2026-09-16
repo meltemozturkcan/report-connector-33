@@ -614,6 +614,36 @@ function DataEntryPage() {
             ]}
           />
 
+          <RepeatTable
+            label="Fiyat listesi (KDV hariç, 2026 baz)"
+            description="Referans kataloğu: gelir kalemi, fiyat, birim/dönem ve kapsam koşulu. Hesaplamayı doğrudan etkilemez."
+            rows={draft.feasibility.priceCatalog}
+            emptyRow={emptyPriceCatalogRow}
+            onChange={(rows) => patch("feasibility", { ...draft.feasibility, priceCatalog: rows })}
+            addLabel="Fiyat kalemi ekle"
+            columns={[
+              { key: "name", label: "Gelir kalemi", type: "text", width: "28%" },
+              { key: "price", label: "Fiyat (TL)" },
+              { key: "unit", label: "Birim / dönem", type: "text", width: "20%" },
+              { key: "scope", label: "Kapsam ve koşul", type: "text", width: "32%" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Gelir olmayan veya indirime yol açan kalemler"
+            description="Ücretsiz pilot, freemium akış, indirimler ve Morvoi geliri olmayan üçüncü taraf bedelleri burada ayrı izlenir."
+            rows={draft.feasibility.nonRevenueItems}
+            emptyRow={emptyNonRevenueRow}
+            onChange={(rows) => patch("feasibility", { ...draft.feasibility, nonRevenueItems: rows })}
+            addLabel="Kalem ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "26%" },
+              { key: "nature", label: "Finansal niteliği", type: "text", width: "22%" },
+              { key: "condition", label: "Koşul", type: "text", width: "36%" },
+              { key: "amount", label: "Tutar / etki (TL)" },
+            ]}
+          />
+
           <section className="space-y-3">
             <div>
               <h3 className="text-sm font-medium text-foreground">Satış hunisi varsayımları</h3>
