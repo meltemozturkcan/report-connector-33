@@ -141,6 +141,17 @@ export const reportInputSchema = z.object({
         }),
       )
       .default([]),
+    /** Nakit akışı / tahsilat takibi: o ay faturalandırılıp tahsil edilen tutarlar. */
+    cashCollections: z
+      .array(
+        z.object({
+          period: text,
+          pilot: num.default(0),
+          pilotConversion: num.default(0),
+          newAnnual: num.default(0),
+        }),
+      )
+      .default([]),
     periods: z
       .array(
         z.object({
@@ -243,6 +254,7 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
 export const emptyTierRow = { name: "", unitPrice: 0 };
 export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
 export const emptyNonRevenueRow = { name: "", nature: "", condition: "", amount: 0 };
+export const emptyCashCollectionRow = { period: "", pilot: 0, pilotConversion: 0, newAnnual: 0 };
 export const emptyOtherRevenueRow = { name: "", volume: 0, unitPrice: 0, hypothesis: "" };
 export const emptyFixedItemRow = { name: "", amount: 0 };
 export const emptyFirstYearCostRow = {
