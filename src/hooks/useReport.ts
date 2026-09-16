@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { computeAcquisition, type AcquisitionModel } from "@/lib/acquisition-calc";
 import { computeFeasibility, type FeasibilityModel } from "@/lib/feasibility-calc";
+import { computeProjection, type ProjectionModel } from "@/lib/projection-calc";
 import { computeReport, type ReportModel } from "@/lib/report-calc";
+
 import { emptyReportInput, parseReportInput, type ReportInput } from "@/lib/report-schema";
 
 const QUERY_KEY = ["report-workbook"] as const;
