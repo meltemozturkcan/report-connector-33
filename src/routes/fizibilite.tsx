@@ -540,20 +540,27 @@ function FeasibilityPage() {
 type PriceCatalogRow = { name: string; price: number; unit: string; scope: string };
 type NonRevenueRow = { name: string; nature: string; condition: string; amount: number };
 
-type CashCollectionRow = { period: string; pilot: number; pilotConversion: number; newAnnual: number };
+type CashCollectionRow = {
+  period: string;
+  pilotCount: number;
+  pilot: number;
+  annualCount: number;
+  annual: number;
+};
 
-/** Nakit akışı / tahsilat takibi: ay bazında tahsil edilen tutarlar ve toplam. */
+/** Nakit akışı / tahsilat takibi: ay bazında tahsil edilen adetler, tutarlar ve toplam. */
 function CashCollectionSection({ rows }: { rows: CashCollectionRow[] }) {
   if (rows.length === 0) return null;
   const totals = rows.reduce(
     (acc, row) => ({
+      pilotCount: acc.pilotCount + row.pilotCount,
       pilot: acc.pilot + row.pilot,
-      pilotConversion: acc.pilotConversion + row.pilotConversion,
-      newAnnual: acc.newAnnual + row.newAnnual,
+      annualCount: acc.annualCount + row.annualCount,
+      annual: acc.annual + row.annual,
     }),
-    { pilot: 0, pilotConversion: 0, newAnnual: 0 },
+    { pilotCount: 0, pilot: 0, annualCount: 0, annual: 0 },
   );
-  const grandTotal = totals.pilot + totals.pilotConversion + totals.newAnnual;
+  const grandTotal = totals.pilot + totals.annual;
 
   return (
     <Section
@@ -566,19 +573,21 @@ function CashCollectionSection({ rows }: { rows: CashCollectionRow[] }) {
         rows={rows}
         columns={[
           { header: "Dönem", cell: (row) => row.period },
+          { header: "Yeni ücretli pilot", align: "right", cell: (row) => formatAmount(row.pilotCount) },
           { header: "Pilot tahsilatı", align: "right", cell: (row) => formatAmount(row.pilot) },
-          { header: "Pilot dönüşümü yıllık abonelik", align: "right", cell: (row) => formatAmount(row.pilotConversion) },
-          { header: "Yeni yıllık profesyonel abonelik", align: "right", cell: (row) => formatAmount(row.newAnnual) },
+          { header: "Yeni yıllık profesyonel abonelik", align: "right", cell: (row) => formatAmount(row.annualCount) },
+          { header: "Yıllık abonelik tahsilatı", align: "right", cell: (row) => formatAmount(row.annual) },
           {
             header: "Toplam tahsilat",
             align: "right",
-            cell: (row) => formatAmount(row.pilot + row.pilotConversion + row.newAnnual),
+            cell: (row) => formatAmount(row.pilot + row.annual),
           },
         ]}
       />
       <p className="mt-3 text-sm text-muted-foreground">
-        Toplam: pilot {formatAmount(totals.pilot)} TL, pilot dönüşümü {formatAmount(totals.pilotConversion)} TL,
-        yeni yıllık abonelik {formatAmount(totals.newAnnual)} TL — genel tahsilat {formatAmount(grandTotal)} TL.
+        Toplam: {formatAmount(totals.pilotCount)} pilot / {formatAmount(totals.pilot)} TL,{" "}
+        {formatAmount(totals.annualCount)} yıllık abonelik / {formatAmount(totals.annual)} TL — genel tahsilat{" "}
+        {formatAmount(grandTotal)} TL.
       </p>
     </Section>
   );

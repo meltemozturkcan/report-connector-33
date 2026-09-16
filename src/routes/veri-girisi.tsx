@@ -655,10 +655,11 @@ function DataEntryPage() {
             onChange={(rows) => patch("feasibility", { ...draft.feasibility, cashCollections: rows })}
             addLabel="Dönem ekle"
             columns={[
-              { key: "period", label: "Dönem", type: "text", width: "28%" },
+              { key: "period", label: "Dönem", type: "text", width: "22%" },
+              { key: "pilotCount", label: "Yeni ücretli pilot (adet)" },
               { key: "pilot", label: "Pilot tahsilatı (TL)" },
-              { key: "pilotConversion", label: "Pilot dönüşümü yıllık abonelik (TL)" },
-              { key: "newAnnual", label: "Yeni yıllık profesyonel abonelik (TL)" },
+              { key: "annualCount", label: "Yeni yıllık abonelik (adet)" },
+              { key: "annual", label: "Yıllık abonelik tahsilatı (TL)" },
             ]}
           />
 
