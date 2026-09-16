@@ -412,6 +412,12 @@ export function computeFeasibility(input: FeasibilityInput) {
     tiers.length === 0 ? "Katman fiyat listesi (bağımsız / klinik / kurum)" : null,
     periods.length === 0 ? "Dönem bazlı aktif lisans adetleri" : null,
     !firstYearCosts.hasData ? "İlk yıl Ar-Ge ve şirket maliyet defteri" : null,
+    periods.some((period) => period.revenueBasis === "arr" && period.totalAccounts > 0)
+      ? `Dönem geliri temeli: ${periods
+          .filter((period) => period.revenueBasis === "arr" && period.totalAccounts > 0)
+          .map((period) => period.period)
+          .join(", ")} için yıl içi aktiflik oranı veya belgeli dönem geliri girilmedi; gelir geçici olarak yıl sonu ARR'ye eşitlendi`
+      : null,
   ].filter((item): item is string => item !== null);
 
   const hypotheses = otherRevenueItems
