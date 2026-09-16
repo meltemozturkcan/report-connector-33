@@ -533,3 +533,60 @@ function FeasibilityPage() {
     </AppShell>
   );
 }
+
+type PriceCatalogRow = { name: string; price: number; unit: string; scope: string };
+type NonRevenueRow = { name: string; nature: string; condition: string; amount: number };
+
+/** Referans fiyat listesi ve gelir olmayan / indirim kalemleri. */
+function PriceCatalogSection({
+  priceCatalog,
+  nonRevenueItems,
+}: {
+  priceCatalog: PriceCatalogRow[];
+  nonRevenueItems: NonRevenueRow[];
+}) {
+  if (priceCatalog.length === 0 && nonRevenueItems.length === 0) return null;
+
+  return (
+    <Section
+      title="Fiyat listesi ve gelir olmayan kalemler"
+      description="Tüm fiyatlar KDV hariç, 2026 baz fiyatlarıdır. Katalog referanstır; BEP hesabı katman fiyatları ve abonelik dışı gelir kalemlerinden yürür."
+    >
+      {priceCatalog.length > 0 ? (
+        <DataTable
+          caption="Gelir kalemleri fiyat listesi"
+          rowKey={(row) => row.name}
+          rows={priceCatalog}
+          columns={[
+            { header: "Gelir kalemi", cell: (row) => row.name },
+            { header: "Fiyat (TL)", align: "right", cell: (row) => formatAmount(row.price) },
+            { header: "Birim / dönem", cell: (row) => row.unit || "—" },
+            { header: "Kapsam ve koşul", cell: (row) => row.scope || "—" },
+          ]}
+        />
+      ) : null}
+      {nonRevenueItems.length > 0 ? (
+        <div className="mt-4">
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Gelir olmayan veya indirime yol açan kalemler
+          </h3>
+          <DataTable
+            caption="Gelir olmayan ve indirim kalemleri"
+            rowKey={(row) => row.name}
+            rows={nonRevenueItems}
+            columns={[
+              { header: "Kalem", cell: (row) => row.name },
+              { header: "Finansal niteliği", cell: (row) => row.nature || "—" },
+              { header: "Koşul", cell: (row) => row.condition || "—" },
+              {
+                header: "Tutar / etki (TL)",
+                align: "right",
+                cell: (row) => (row.amount === 0 ? "—" : formatAmount(row.amount)),
+              },
+            ]}
+          />
+        </div>
+      ) : null}
+    </Section>
+  );
+}
