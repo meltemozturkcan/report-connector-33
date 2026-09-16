@@ -57,10 +57,14 @@ function ProjectionPage() {
   const [selectedYear, setSelectedYear] = useState<string>("");
 
   const active = useMemo(() => selectScenario(model, scenario, view), [model, scenario, view]);
-  const yearRow = useMemo(
-    () => active.years.find((row) => row.year === selectedYear) ?? active.years[active.years.length - 1],
-    [active.years, selectedYear],
-  );
+  /** Varsayılan: veri girilmiş son yıl; hiç satışı olmayan yıllar öne çıkarılmaz. */
+  const yearRow = useMemo(() => {
+    const selected = active.years.find((row) => row.year === selectedYear);
+    if (selected) return selected;
+    const withSales = [...active.years].reverse().find((row) => row.netSales !== 0 || row.opex !== 0);
+    return withSales ?? active.years[0];
+  }, [active.years, selectedYear]);
+
 
   if (!model.hasProjectionData) {
     return (
