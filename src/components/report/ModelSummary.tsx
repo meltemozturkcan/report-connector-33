@@ -29,7 +29,7 @@ export function ModelSummary() {
   const b2b = acquisition.b2b;
 
   const cashCollectionTotal = feasibility.cashCollections.reduce(
-    (sum, row) => sum + row.pilotCollection + row.annualCollection,
+    (sum, row) => sum + row.pilot + row.annual,
     0,
   );
 
