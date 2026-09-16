@@ -388,6 +388,8 @@ export function computeFeasibility(input: FeasibilityInput) {
     method: input.method,
     currencyNote: input.currencyNote,
     tiers,
+    priceCatalog: input.priceCatalog,
+    nonRevenueItems: input.nonRevenueItems,
     periods,
     current,
     first,

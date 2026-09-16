@@ -40,6 +40,8 @@ function FeasibilityPage() {
     firstYearCosts,
     otherRevenueItems,
     otherRevenueCatalogTotal,
+    priceCatalog,
+    nonRevenueItems,
     funnelBridge,
     funnelAssumptions,
     missingInputs,
