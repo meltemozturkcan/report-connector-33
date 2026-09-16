@@ -105,13 +105,18 @@ export function ModelSummary() {
   }
 
   if (hasAcquisition && acquisition.blendedLtv > 0) {
+    /** Ölçülen (cohort) CAC yoksa plandaki ücretli CAC kullanılır. */
+    const paidCac = acquisition.measuredPaidCac > 0 ? acquisition.measuredPaidCac : plan.paidCac;
+    const ratio = paidCac > 0 ? acquisition.blendedLtv / paidCac : 0;
+    const payback =
+      acquisition.blendedContribution > 0 ? paidCac / acquisition.blendedContribution : 0;
     kpis.push({
       label: "Karma LTV / CAC",
-      value: formatRatio(acquisition.b2cLtvToCac, 1),
-      note: `LTV ${tl(acquisition.blendedLtv)} · geri ödeme ${formatAmount(acquisition.b2cPaybackMonths, 1)} ay`,
+      value: formatRatio(ratio, 1),
+      note: `LTV ${tl(acquisition.blendedLtv)} · CAC ${tl(paidCac, 2)} · geri ödeme ${formatAmount(payback, 1)} ay`,
       delta: {
         text: "Hedef 3,0x",
-        tone: acquisition.b2cLtvToCac >= 3 ? "positive" : "negative",
+        tone: ratio >= 3 ? "positive" : "negative",
       },
     });
   }
