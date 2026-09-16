@@ -309,6 +309,7 @@ export function computeFeasibility(input: FeasibilityInput) {
 
     return {
       period: row.period,
+      stage: row.stage ?? "",
       fixedCostSource,
       bepAccountsAtPriceDrop,
       tiers: tiersWithBep,
