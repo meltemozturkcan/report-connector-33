@@ -14,7 +14,7 @@ const navItems = [
   { to: "/karlilik", label: "Kârlılık" },
   { to: "/nakit", label: "Nakit ve İşletme Sermayesi" },
   { to: "/finansman", label: "Borç, Kredi ve CAPEX" },
-  { to: "/tahmin", label: "Yıl Sonu Tahmini" },
+  { to: "/tahmin", label: "Projeksiyon 2027–2032" },
   { to: "/cac", label: "CAC" },
   { to: "/ltv", label: "LTV" },
   { to: "/edinim", label: "Edinim ve Birim Maliyet" },

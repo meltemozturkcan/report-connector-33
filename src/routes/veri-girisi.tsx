@@ -180,7 +180,7 @@ function DataEntryPage() {
           <TabsTrigger value="butce">Bütçe</TabsTrigger>
           <TabsTrigger value="nakit">İşletme sermayesi</TabsTrigger>
           <TabsTrigger value="finansman">Borç ve CAPEX</TabsTrigger>
-          <TabsTrigger value="tahmin">Yıl sonu tahmini</TabsTrigger>
+          <TabsTrigger value="tahmin">Projeksiyon</TabsTrigger>
           <TabsTrigger value="birim">CAC / LTV</TabsTrigger>
           <TabsTrigger value="fizibilite">Fizibilite / BEP</TabsTrigger>
           <TabsTrigger value="ilkyil">İlk yıl Ar-Ge / şirket</TabsTrigger>
