@@ -650,28 +650,39 @@ function AcquisitionPage() {
 
       <Section
         title="Sabit ürün operasyon maliyeti"
-        description="Bu kalemler lisans başına tek tek oluşmaz: önce yıllık toplanır, karma kullanımlı kalemlerde ürün payı alınır, sonra yıl içindeki ortalama aktif lisans eşdeğerine bölünür (yıl sonu hedefine değil)."
+        description="Bu kalemler lisans başına tek tek oluşmaz: önce yıllık toplanır, karma kullanımlı kalemlerde ürün payı alınır, sonra yıl içindeki ortalama aktif lisans eşdeğerine bölünür (yıl sonu hedefine değil). Ürün kullanım payı %0 ise kanıt (dağıtım anahtarı) henüz ölçülmemiştir; o kalem lisans maliyetine yüklenmez."
       >
         <DataTable
           caption="Sabit ürün operasyon maliyeti"
           rowKey={(row) => row.name}
           rows={[
-            ...b2b.fixedOps,
+            ...b2b.fixedOps.map((row) => ({ ...row, isTotal: false })),
             {
               name: "Toplam ürün operasyon maliyeti",
               annualAmount: b2b.fixedOps.reduce((sum, row) => sum + row.annualAmount, 0),
-              productShareRate: 100,
+              productShareRate: 0,
               productAmount: b2b.fixedOpsAnnualTotal,
               perLicense: b2b.fixedOpsPerLicense,
+              allocationKey: "",
+              isTotal: true,
             },
           ]}
           columns={[
             { header: "Kalem", cell: (row) => row.name },
             { header: "Yıllık tutar", align: "right", cell: (row) => tl(row.annualAmount) },
             {
+              header: "Kanıt / dağıtım anahtarı",
+              cell: (row) => row.allocationKey || "—",
+            },
+            {
               header: "Ürün kullanım payı",
               align: "right",
-              cell: (row) => formatPercent(row.productShareRate, 0),
+              cell: (row) =>
+                row.isTotal
+                  ? "—"
+                  : row.productShareRate > 0
+                    ? formatPercent(row.productShareRate, 0)
+                    : "Ölçülmeli",
             },
             { header: "Ürüne düşen", align: "right", cell: (row) => tl(row.productAmount) },
             { header: "Lisans başına", align: "right", cell: (row) => tl(row.perLicense, 2) },

@@ -1717,7 +1717,7 @@ function DataEntryPage() {
 
           <RepeatTable
             label="Sabit ürün operasyon maliyeti"
-            description="Karma kullanımlı kalemlerde (ChatGPT, Google Workspace, ofis, muhasebe, hukuk) ürün kullanım payı girin; %100 dağıtmayın."
+            description="Karma kullanımlı kalemlerde (ChatGPT, Google Workspace, ofis, muhasebe, hukuk) ürün kullanım payı girin; %100 dağıtmayın. Payı ancak kanıt (saat kaydı, kullanım payı, destek talebi sayısı) ölçüldüğünde girin; ölçülmediyse %0 bırakın."
             rows={draft.acquisition.b2bLicense.fixedOps}
             emptyRow={emptyFixedOpsRow}
             onChange={(rows) =>
@@ -1728,8 +1728,9 @@ function DataEntryPage() {
             }
             addLabel="Operasyon kalemi ekle"
             columns={[
-              { key: "name", label: "Kalem", type: "text", width: "44%" },
+              { key: "name", label: "Kalem", type: "text", width: "30%" },
               { key: "annualAmount", label: "Yıllık tutar (TL)" },
+              { key: "allocationKey", label: "Kanıt / dağıtım anahtarı", type: "text", width: "34%" },
               { key: "productShareRate", label: "Ürün kullanım payı (%)" },
             ]}
           />
