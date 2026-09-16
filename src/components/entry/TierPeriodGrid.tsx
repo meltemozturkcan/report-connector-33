@@ -37,7 +37,15 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
   const addRow = () =>
     onChange([
       ...rows,
-      { period: "", stage: "Ticari yıl", counts: tierNames.map(() => 0), otherRevenue: 0, fixedCostOverride: 0 },
+      {
+        period: "",
+        stage: "Ticari yıl",
+        counts: tierNames.map(() => 0),
+        revenueRecognitionRate: 0,
+        recognizedRevenueOverride: 0,
+        otherRevenue: 0,
+        fixedCostOverride: 0,
+      },
     ]);
 
   return (
