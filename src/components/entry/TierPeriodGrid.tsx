@@ -131,6 +131,36 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
                   ))}
                   <td className="px-1 py-1">
                     <Input
+                      aria-label={`Yıl içi aktiflik oranı ${index + 1}`}
+                      type="number"
+                      inputMode="decimal"
+                      value={row.revenueRecognitionRate ?? 0}
+                      onChange={(event) =>
+                        update(index, {
+                          revenueRecognitionRate:
+                            event.target.value === "" ? 0 : Number(event.target.value),
+                        })
+                      }
+                      className="h-9 w-24 tabular-nums"
+                    />
+                  </td>
+                  <td className="px-1 py-1">
+                    <Input
+                      aria-label={`Dönem geliri ${index + 1}`}
+                      type="number"
+                      inputMode="decimal"
+                      value={row.recognizedRevenueOverride ?? 0}
+                      onChange={(event) =>
+                        update(index, {
+                          recognizedRevenueOverride:
+                            event.target.value === "" ? 0 : Number(event.target.value),
+                        })
+                      }
+                      className="h-9 w-32 tabular-nums"
+                    />
+                  </td>
+                  <td className="px-1 py-1">
+                    <Input
                       aria-label={`Diğer gelir ${index + 1}`}
                       type="number"
                       inputMode="decimal"
