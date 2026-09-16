@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { computeAcquisition, type AcquisitionModel } from "@/lib/acquisition-calc";
 import { computeFeasibility, type FeasibilityModel } from "@/lib/feasibility-calc";
+import { computeProjection, type ProjectionModel } from "@/lib/projection-calc";
 import { computeReport, type ReportModel } from "@/lib/report-calc";
+
 import { emptyReportInput, parseReportInput, type ReportInput } from "@/lib/report-schema";
 
 const QUERY_KEY = ["report-workbook"] as const;
@@ -83,3 +85,11 @@ export function useFeasibility(): FeasibilityModel & { isLoading: boolean } {
   );
   return { ...model, isLoading: query.isLoading };
 }
+
+/** 2027–2032 projeksiyon modeli. Projeksiyon ve kârlılık sayfaları bunu kullanır. */
+export function useProjection(): ProjectionModel & { isLoading: boolean } {
+  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
+  const model = useMemo(() => computeProjection(query.data ?? emptyReportInput), [query.data]);
+  return { ...model, isLoading: query.isLoading };
+}
+

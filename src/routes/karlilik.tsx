@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { useReport } from "@/hooks/useReport";
+import { useProjection, useReport } from "@/hooks/useReport";
+import type { ProjectionScenario } from "@/lib/projection-calc";
+
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
 import { Section } from "@/components/report/Section";
@@ -40,6 +42,8 @@ function ProfitabilityPage() {
     previousMonth,
     salesBreakdown,
   } = useReport();
+  const projection = useProjection();
+
 
   if (!hasReportData) {
     return (
@@ -49,14 +53,24 @@ function ProfitabilityPage() {
     );
   }
 
-  const bridge = [
-    { label: "Önceki ay FAVÖK marjı", value: previousMargin.ebitda },
-    { label: "Hammadde maliyeti etkisi", value: -1.4 },
-    { label: "Ürün karması etkisi", value: -0.4 },
-    { label: "Fiyat artışı etkisi", value: 0.9 },
-    { label: "Faaliyet gideri kaldıracı", value: -0.1 },
-    { label: "Bu ay FAVÖK marjı", value: currentMargin.ebitda },
-  ];
+  const baseScenarioYears =
+    projection.scenariosAccrual.find((row: ProjectionScenario) => row.name === "Baz")?.years ?? [];
+
+  const projectionYear = baseScenarioYears[baseScenarioYears.length - 1];
+  const netProfitBridge: { label: string; amount: number; kind: "total" | "cost" }[] = projectionYear
+    ? [
+        { label: "Net satış", amount: projectionYear.netSales, kind: "total" },
+        { label: "Satışların maliyeti", amount: -projectionYear.variableCost, kind: "cost" },
+        { label: "Brüt kâr", amount: projectionYear.grossProfit, kind: "total" },
+        { label: "Faaliyet gideri", amount: -projectionYear.opex, kind: "cost" },
+        { label: "FAVÖK", amount: projectionYear.ebitda, kind: "total" },
+        { label: "Amortisman", amount: -projectionYear.amortization, kind: "cost" },
+        { label: "Finansal maliyet", amount: -projectionYear.financialCost, kind: "cost" },
+        { label: "Vergi", amount: -projectionYear.tax, kind: "cost" },
+        { label: "Net kâr", amount: projectionYear.netProfit, kind: "total" },
+      ]
+    : [];
+
 
   return (
     <AppShell>
@@ -114,49 +128,56 @@ function ProfitabilityPage() {
         </div>
       </Section>
 
-      <Section title="FAVÖK marjı köprüsü" description="Önceki aydan bu aya marj değişiminin nedenleri (puan).">
-        <DataTable
-          caption="Marj köprüsü"
-          rowKey={(row) => row.label}
-          rows={bridge}
-          columns={[
-            { header: "Etken", cell: (row) => row.label },
-            {
-              header: "Puan",
-              align: "right",
-              cell: (row) =>
-                row.label.includes("marjı") ? (
-                  <span className="font-medium">{formatPercent(row.value)}</span>
-                ) : (
-                  <Delta value={row.value} digits={1} suffix=" puan" />
+      <Section
+        title="Gelirden net kâra köprü"
+        description={
+          projectionYear
+            ? `${projectionYear.year} · baz senaryo · girilen satış, maliyet ve finansman verisinden hesaplanır.`
+            : "Projeksiyon dönemi girilmedi."
+        }
+      >
+        {projectionYear ? (
+          <DataTable
+            caption="Gelirden net kâra köprü"
+            rowKey={(row) => row.label}
+            rows={netProfitBridge}
+            columns={[
+              { header: "Kalem", cell: (row) => row.label },
+              {
+                header: "Tutar",
+                align: "right",
+                cell: (row) => (
+                  <span className={row.kind === "cost" ? "text-destructive" : "font-medium"}>
+                    {formatAmount(row.amount)}
+                  </span>
                 ),
-            },
-          ]}
-        />
+              },
+            ]}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Net kâr köprüsü için Veri Girişi → Projeksiyon sekmesindeki dönem, vergi oranı ve finansman satırlarını
+            girin.
+          </p>
+        )}
       </Section>
 
-      <Section title="Ürün / müşteri kârlılığı" description="Marj daralmasının nerede yoğunlaştığı.">
+      <Section title="Ürün / müşteri kırılımı" description="Ciro kırılımı; ürün bazlı marj henüz ölçülmedi.">
         <DataTable
-          caption="Ürün grubu kârlılığı"
+          caption="Ürün grubu ciro kırılımı"
           rowKey={(row) => row.name}
-          rows={salesBreakdown.byProduct.map((product, index) => ({
+          rows={salesBreakdown.byProduct.map((product) => ({
             name: product.name,
             revenue: product.current,
-            grossMargin: [31.5, 26.8, 38.2, 14.6][index] ?? 0,
-            change: [-1.2, -2.4, 0.3, -3.8][index] ?? 0,
           }))}
           columns={[
             { header: "Ürün grubu", cell: (row) => row.name },
             { header: "Ciro", align: "right", cell: (row) => formatAmount(row.revenue) },
-            { header: "Brüt marj", align: "right", cell: (row) => formatPercent(row.grossMargin) },
-            {
-              header: "Değişim",
-              align: "right",
-              cell: (row) => <Delta value={row.change} digits={1} suffix=" puan" />,
-            },
+            { header: "Brüt marj", align: "right", cell: () => "Ölçülmeli" },
           ]}
         />
       </Section>
+
 
       <Insight question="Kâr arttıysa nakde yansıdı mı?">
         Hayır. Ciro {formatAmount(currentMonth.sales - previousMonth.sales)} artmasına rağmen FAVÖK{" "}
