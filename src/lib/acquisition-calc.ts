@@ -110,7 +110,9 @@ export function computeAcquisition(input: AcquisitionInput) {
     const attributedAmount = (item.amount * rate) / 100;
     return {
       name: item.name,
+      mainClass: item.mainClass ?? "",
       bucket: item.bucket,
+      channel: item.channel ?? "",
       period: item.period,
       amount: item.amount,
       attributionRate: rate,
