@@ -23,7 +23,9 @@ const clampRate = (value: number) => Math.min(Math.max(value, 0), 100);
 
 export type SpendLedgerLine = {
   name: string;
+  mainClass: string;
   bucket: string;
+  channel: string;
   period: string;
   amount: number;
   attributionRate: number;
@@ -31,6 +33,13 @@ export type SpendLedgerLine = {
   unallocatedAmount: number;
   countsInCac: boolean;
   note: string;
+};
+
+export type SpendClassTotal = {
+  mainClass: string;
+  amount: number;
+  attributedAmount: number;
+  unallocatedAmount: number;
 };
 
 export type CohortChannelResult = {
