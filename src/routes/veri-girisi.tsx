@@ -664,67 +664,13 @@ function DataEntryPage() {
             ]}
           />
 
-          <RepeatTable
-            label="Gelir kanalları haritası"
-            description="Her gelir kanalının başlangıç zamanı, gelir birimi ve ana sürücüsü. Referans niteliğindedir; başa baş hesabını doğrudan etkilemez."
-            rows={draft.feasibility.revenueChannels}
-            emptyRow={emptyRevenueChannelRow}
-            onChange={(rows) => patch("feasibility", { ...draft.feasibility, revenueChannels: rows })}
-            addLabel="Kanal ekle"
-            columns={[
-              { key: "channel", label: "Kanal", type: "text", width: "24%" },
-              { key: "start", label: "Başlangıç", type: "text", width: "20%" },
-              { key: "unit", label: "Gelir birimi", type: "text", width: "24%" },
-              { key: "driver", label: "Ana sürücü", type: "text", width: "32%" },
-            ]}
-          />
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Fiyat listesi, gelir kanalları haritası ve gelir olmayan kalemler genel tablolardır;{" "}
+            <strong className="text-foreground">Fiyat ve gelir kanalları</strong> sekmesinde girilir.
+            Aylık tahsilat takibi ise <strong className="text-foreground">İşletme sermayesi</strong>{" "}
+            sekmesindedir.
+          </p>
 
-          <RepeatTable
-            label="Fiyat listesi (KDV hariç, 2026 baz)"
-            description="Referans kataloğu: gelir kalemi, fiyat, birim/dönem ve kapsam koşulu. Hesaplamayı doğrudan etkilemez."
-            rows={draft.feasibility.priceCatalog}
-
-            emptyRow={emptyPriceCatalogRow}
-            onChange={(rows) => patch("feasibility", { ...draft.feasibility, priceCatalog: rows })}
-            addLabel="Fiyat kalemi ekle"
-            columns={[
-              { key: "name", label: "Gelir kalemi", type: "text", width: "28%" },
-              { key: "price", label: "Fiyat (TL)" },
-              { key: "unit", label: "Birim / dönem", type: "text", width: "20%" },
-              { key: "scope", label: "Kapsam ve koşul", type: "text", width: "32%" },
-            ]}
-          />
-
-          <RepeatTable
-            label="Gelir olmayan veya indirime yol açan kalemler"
-            description="Ücretsiz pilot, freemium akış, indirimler ve Morvoi geliri olmayan üçüncü taraf bedelleri burada ayrı izlenir."
-            rows={draft.feasibility.nonRevenueItems}
-            emptyRow={emptyNonRevenueRow}
-            onChange={(rows) => patch("feasibility", { ...draft.feasibility, nonRevenueItems: rows })}
-            addLabel="Kalem ekle"
-            columns={[
-              { key: "name", label: "Kalem", type: "text", width: "26%" },
-              { key: "nature", label: "Finansal niteliği", type: "text", width: "22%" },
-              { key: "condition", label: "Koşul", type: "text", width: "36%" },
-              { key: "amount", label: "Tutar / etki (TL)" },
-            ]}
-          />
-
-          <RepeatTable
-            label="Nakit akışı / tahsilat takibi"
-            description="Yalnızca o ay faturalandırılan ve tahsil edilen tutarlar yazılır; toplam tahsilat otomatik hesaplanır."
-            rows={draft.feasibility.cashCollections}
-            emptyRow={emptyCashCollectionRow}
-            onChange={(rows) => patch("feasibility", { ...draft.feasibility, cashCollections: rows })}
-            addLabel="Dönem ekle"
-            columns={[
-              { key: "period", label: "Dönem", type: "text", width: "22%" },
-              { key: "pilotCount", label: "Yeni ücretli pilot (adet)" },
-              { key: "pilot", label: "Pilot tahsilatı (TL)" },
-              { key: "annualCount", label: "Yeni yıllık abonelik (adet)" },
-              { key: "annual", label: "Yıllık abonelik tahsilatı (TL)" },
-            ]}
-          />
 
           <section className="space-y-3">
             <div>
