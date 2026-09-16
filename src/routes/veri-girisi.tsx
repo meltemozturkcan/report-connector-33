@@ -20,6 +20,7 @@ import {
   emptyMonthlyRow,
   emptyCashCollectionRow,
   emptyNonRevenueRow,
+  emptyRevenueChannelRow,
   emptyOtherRevenueRow,
   emptyPriceCatalogRow,
   emptyTierRow,
