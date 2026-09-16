@@ -23,6 +23,14 @@ import {
   emptyFixedOpsRow,
   emptyPerReportCostRow,
   emptySpendLedgerRow,
+  emptyCostLayerRow,
+  emptyFixedOpexGroupRow,
+  emptyCostPlacementRow,
+  emptyChannelMetricRow,
+  emptyB2cCogsRow,
+  emptyPlanChannelRow,
+  emptyPlanPoolItemRow,
+  emptyPlanActualRow,
   emptyFirstYearCostRow,
   emptyFixedItemRow,
   emptyMonthlyRow,
@@ -1164,6 +1172,166 @@ function DataEntryPage() {
         </TabsContent>
 
         <TabsContent value="edinim" className="space-y-6 border border-border bg-card p-4">
+          <RepeatTable
+            label="Ana maliyet katmanları"
+            description="Hangi katmanın B2C CAC'e girdiği burada tanımlanır."
+            rows={draft.acquisition.costLayers}
+            emptyRow={emptyCostLayerRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, costLayers: rows })}
+            addLabel="Katman ekle"
+            columns={[
+              { key: "layer", label: "Katman", type: "text", width: "22%" },
+              { key: "scope", label: "Kapsam", type: "text", width: "40%" },
+              { key: "cacTreatment", label: "B2C CAC'e girer mi?", type: "text", width: "38%" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Sabit işletme bütçesi (yıllık)"
+            description="CAC tablosunda görünen paylar bu bütçenin B2C'ye tahsis edilen kısmıdır; yeni gider değildir."
+            rows={draft.acquisition.fixedOpexGroups}
+            emptyRow={emptyFixedOpexGroupRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, fixedOpexGroups: rows })}
+            addLabel="Grup ekle"
+            columns={[
+              { key: "group", label: "Grup", type: "text", width: "24%" },
+              { key: "content", label: "İçerik", type: "text", width: "50%" },
+              { key: "annualAmount", label: "Yıllık tutar (TL)" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Kalem → doğru maliyet yeri"
+            rows={draft.acquisition.costPlacements}
+            emptyRow={emptyCostPlacementRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, costPlacements: rows })}
+            addLabel="Eşleme ekle"
+            columns={[
+              { key: "item", label: "Kalem", type: "text", width: "50%" },
+              { key: "costPlace", label: "Doğru maliyet yeri", type: "text", width: "50%" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Kanal başına ölçülecek metrik"
+            rows={draft.acquisition.channelMetrics}
+            emptyRow={emptyChannelMetricRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, channelMetrics: rows })}
+            addLabel="Kanal metriği ekle"
+            columns={[
+              { key: "channel", label: "Kanal", type: "text", width: "40%" },
+              { key: "metric", label: "Ölçülecek metrik", type: "text", width: "60%" },
+            ]}
+          />
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <TextField
+              id="b2c-plan-period"
+              label="Plan dönemi"
+              value={draft.acquisition.b2cPlan.period}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cPlan: { ...draft.acquisition.b2cPlan, period: value },
+                })
+              }
+            />
+            <NumberField
+              id="b2c-plan-cac-target"
+              label="Hedef freemium CAC üst sınırı (TL)"
+              value={draft.acquisition.b2cPlan.cacTarget}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cPlan: { ...draft.acquisition.b2cPlan, cacTarget: value },
+                })
+              }
+            />
+            <NumberField
+              id="b2c-plan-store-commission"
+              label="Mağaza içi tahsilat komisyonu (%)"
+              value={draft.acquisition.b2cPlan.storeCommissionRate}
+              onChange={(value) =>
+                patch("acquisition", {
+                  ...draft.acquisition,
+                  b2cPlan: { ...draft.acquisition.b2cPlan, storeCommissionRate: value },
+                })
+              }
+            />
+          </div>
+
+          <RepeatTable
+            label="Kanal bazlı uygun ücretsiz ebeveyn hedefi"
+            description="Ortak maliyetler bu hedef payına göre kanallara dağıtılır."
+            rows={draft.acquisition.b2cPlan.channels}
+            emptyRow={emptyPlanChannelRow}
+            onChange={(rows) =>
+              patch("acquisition", {
+                ...draft.acquisition,
+                b2cPlan: { ...draft.acquisition.b2cPlan, channels: rows },
+              })
+            }
+            addLabel="Kanal ekle"
+            columns={[
+              { key: "channel", label: "Kanal", type: "text", width: "50%" },
+              { key: "eligibleTarget", label: "Uygun ücretsiz ebeveyn hedefi" },
+            ]}
+          />
+
+          <RepeatTable
+            label="B2C CAC maliyet havuzu"
+            description="Kanal alanı boş bırakılan kalemler ortak maliyet sayılır ve hedef payına göre dağıtılır. Nakit etkisi peşin ödemelerde P&L payından farklı olabilir."
+            rows={draft.acquisition.b2cPlan.poolItems}
+            emptyRow={emptyPlanPoolItemRow}
+            onChange={(rows) =>
+              patch("acquisition", {
+                ...draft.acquisition,
+                b2cPlan: { ...draft.acquisition.b2cPlan, poolItems: rows },
+              })
+            }
+            addLabel="Maliyet kalemi ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "22%" },
+              { key: "calculation", label: "Hesaplama", type: "text", width: "26%" },
+              { key: "channel", label: "Kanal (boş = ortak)", type: "text", width: "20%" },
+              { key: "pnlAmount", label: "P&L maliyeti (TL)" },
+              { key: "cashAmount", label: "Nakit etkisi (TL)" },
+            ]}
+          />
+
+          <RepeatTable
+            label="B2C ürün maliyeti (COGS) kalemleri"
+            rows={draft.acquisition.b2cCogs}
+            emptyRow={emptyB2cCogsRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, b2cCogs: rows })}
+            addLabel="COGS kalemi ekle"
+            columns={[
+              { key: "item", label: "Kalem", type: "text", width: "34%" },
+              { key: "calculation", label: "Hesaplama", type: "text", width: "38%" },
+              { key: "layer", label: "Durum", type: "text", width: "28%" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Dönem sonu kanıt tablosu"
+            description="Gerçekleşen harcama ve gerçekleşen uygun ücretsiz ebeveyn adedi girilince gerçek freemium CAC hesaplanır."
+            rows={draft.acquisition.b2cPlan.actuals}
+            emptyRow={emptyPlanActualRow}
+            onChange={(rows) =>
+              patch("acquisition", {
+                ...draft.acquisition,
+                b2cPlan: { ...draft.acquisition.b2cPlan, actuals: rows },
+              })
+            }
+            addLabel="Kanal satırı ekle"
+            columns={[
+              { key: "channel", label: "Kanal", type: "text", width: "34%" },
+              { key: "actualSpend", label: "Gerçek harcama (TL)" },
+              { key: "actualEligible", label: "Uygun ücretsiz ebeveyn" },
+              { key: "chatbotAssistedCompletion", label: "Chatbot destekli tamamlanma" },
+            ]}
+          />
+
           <p className="text-sm text-muted-foreground">
             Her gider kalemi defterde tek satırda girilir ve tek bir yere yazılır. Atıf oranı kalemi
             böler: örneğin pazarlama personelinin %30'u B2C edinimine ayrılıyorsa yalnız %30'u CAC

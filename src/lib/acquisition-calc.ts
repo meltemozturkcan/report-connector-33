@@ -315,15 +315,114 @@ export function computeAcquisition(input: AcquisitionInput) {
       : null,
   ].filter((item): item is string => item !== null);
 
+  /* ---------- 7. Aylık B2C edinim planı ---------- */
+  const plan = input.b2cPlan;
+  const planEligibleTotal = plan.channels.reduce((sum, row) => sum + row.eligibleTarget, 0);
+  const planDirectFor = (channel: string) =>
+    plan.poolItems
+      .filter((item) => item.channel.trim() && item.channel.trim() === channel.trim())
+      .reduce((sum, item) => sum + item.pnlAmount, 0);
+  const sharedPoolItems = plan.poolItems.filter((item) => !item.channel.trim());
+  const planSharedCost = sharedPoolItems.reduce((sum, item) => sum + item.pnlAmount, 0);
+  const planDirectCost = plan.poolItems
+    .filter((item) => item.channel.trim())
+    .reduce((sum, item) => sum + item.pnlAmount, 0);
+  const planPool = planDirectCost + planSharedCost;
+  const planCashPool = plan.poolItems.reduce((sum, item) => sum + item.cashAmount, 0);
+
+  const planChannels = plan.channels.map((row) => {
+    const share = safeDiv(row.eligibleTarget, planEligibleTotal);
+    const directCost = planDirectFor(row.channel);
+    const sharedCost = planSharedCost * share;
+    const totalCost = directCost + sharedCost;
+    return {
+      channel: row.channel,
+      eligibleTarget: row.eligibleTarget,
+      eligibleShare: share * 100,
+      directCost,
+      sharedCost,
+      totalCost,
+      plannedCac: safeDiv(totalCost, row.eligibleTarget),
+    };
+  });
+
+  const planFreemiumCac = safeDiv(planPool, planEligibleTotal);
+  const planCacCeiling = planEligibleTotal * plan.cacTarget;
+  const planBuffer = planCacCeiling - planPool;
+  const planConversionRate = clampRate(unit.freeToPaidRate);
+  const planPaidParents = (planEligibleTotal * planConversionRate) / 100;
+  const planBasicParents = (planPaidParents * basicMix) / 100;
+  const planPremiumParents = planPaidParents - planBasicParents;
+  const planBasicRevenue = planBasicParents * unit.basicPrice;
+  const planPremiumRevenue = planPremiumParents * unit.premiumPrice;
+  const planGrossRevenue = planBasicRevenue + planPremiumRevenue;
+  const planPaidCac = safeDiv(planPool, planPaidParents);
+  const planStoreCommission = (planGrossRevenue * clampRate(plan.storeCommissionRate)) / 100;
+
+  const planActuals = plan.actuals.map((row) => ({
+    channel: row.channel,
+    actualSpend: row.actualSpend,
+    actualEligible: row.actualEligible,
+    actualCac: safeDiv(row.actualSpend, row.actualEligible),
+    chatbotAssistedCompletion: row.chatbotAssistedCompletion,
+  }));
+  const planActualSpend = planActuals.reduce((sum, row) => sum + row.actualSpend, 0);
+  const planActualEligible = planActuals.reduce((sum, row) => sum + row.actualEligible, 0);
+
+  const b2cPlan = {
+    period: plan.period,
+    cacTarget: plan.cacTarget,
+    channels: planChannels,
+    eligibleTotal: planEligibleTotal,
+    poolItems: plan.poolItems.map((item) => ({
+      ...item,
+      isShared: !item.channel.trim(),
+    })),
+    directCost: planDirectCost,
+    sharedCost: planSharedCost,
+    pool: planPool,
+    cashPool: planCashPool,
+    freemiumCac: planFreemiumCac,
+    cacCeiling: planCacCeiling,
+    buffer: planBuffer,
+    conversionRate: planConversionRate,
+    paidParents: planPaidParents,
+    basicParents: planBasicParents,
+    premiumParents: planPremiumParents,
+    basicRevenue: planBasicRevenue,
+    premiumRevenue: planPremiumRevenue,
+    grossRevenue: planGrossRevenue,
+    paidCac: planPaidCac,
+    storeCommissionRate: clampRate(plan.storeCommissionRate),
+    storeCommission: planStoreCommission,
+    actuals: planActuals,
+    actualSpend: planActualSpend,
+    actualEligible: planActualEligible,
+    actualCac: safeDiv(planActualSpend, planActualEligible),
+  };
+
+  const fixedOpexGroups = input.fixedOpexGroups.map((row) => ({ ...row }));
+  const fixedOpexTotal = fixedOpexGroups.reduce((sum, row) => sum + row.annualAmount, 0);
+
   const hasAcquisitionData =
     ledger.length > 0 ||
     cohorts.length > 0 ||
     b2b.licensePrice > 0 ||
     unit.basicPrice > 0 ||
-    unit.premiumPrice > 0;
+    unit.premiumPrice > 0 ||
+    plan.channels.length > 0 ||
+    input.costLayers.length > 0 ||
+    fixedOpexGroups.length > 0;
 
   return {
     hasAcquisitionData,
+    b2cPlan,
+    costLayers: input.costLayers,
+    costPlacements: input.costPlacements,
+    channelMetrics: input.channelMetrics,
+    b2cCogs: input.b2cCogs,
+    fixedOpexGroups,
+    fixedOpexTotal,
     ledger,
     bucketTotals,
     b2cCacPool,

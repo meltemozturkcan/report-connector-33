@@ -355,6 +355,63 @@ export const reportInputSchema = z.object({
           .default([]),
       })
       .default({}),
+    /** Ana maliyet katmanları: hangi katman B2C CAC'e girer. */
+    costLayers: z
+      .array(z.object({ layer: text, scope: text.default(""), cacTreatment: text.default("") }))
+      .default([]),
+    /** Sabit işletme bütçesi grupları (yıllık). */
+    fixedOpexGroups: z
+      .array(z.object({ group: text, content: text.default(""), annualAmount: num.default(0) }))
+      .default([]),
+    /** Kalem → doğru maliyet yeri eşlemesi (ör. chatbot kalemleri). */
+    costPlacements: z
+      .array(z.object({ item: text, costPlace: text.default("") }))
+      .default([]),
+    /** Kanal başına ölçülecek metrik tanımı. */
+    channelMetrics: z.array(z.object({ channel: text, metric: text.default("") })).default([]),
+    /** B2C ürün COGS katmanı (CAC'ten ayrı izlenir). */
+    b2cCogs: z
+      .array(z.object({ item: text, calculation: text.default(""), layer: text.default("") }))
+      .default([]),
+    /**
+     * Aylık B2C edinim planı (ör. Mart 2028). Ortak maliyetler uygun ücretsiz
+     * ebeveyn hedefi payına göre kanallara dağıtılır; kanala atanmış kalemler
+     * doğrudan maliyet sayılır. Aynı kalem yalnız bir satırda durur.
+     */
+    b2cPlan: z
+      .object({
+        period: text.default(""),
+        /** Hedeflenen üst sınır freemium CAC (TL). */
+        cacTarget: num.default(0),
+        /** Mağaza içi tahsilat komisyonu (%); web tahsilatına uygulanmaz. */
+        storeCommissionRate: num.default(0),
+        channels: z
+          .array(z.object({ channel: text, eligibleTarget: num.default(0) }))
+          .default([]),
+        poolItems: z
+          .array(
+            z.object({
+              name: text,
+              calculation: text.default(""),
+              /** Boş = ortak maliyet, dolu = o kanalın doğrudan maliyeti. */
+              channel: text.default(""),
+              pnlAmount: num.default(0),
+              cashAmount: num.default(0),
+            }),
+          )
+          .default([]),
+        actuals: z
+          .array(
+            z.object({
+              channel: text,
+              actualSpend: num.default(0),
+              actualEligible: num.default(0),
+              chatbotAssistedCompletion: num.default(0),
+            }),
+          )
+          .default([]),
+      })
+      .default({}),
   }),
   narrative: z.object({
     notes: z.array(z.object({ text: text })).default([]),
@@ -400,6 +457,25 @@ export const emptyPerReportCostRow = { name: "", unitCost: 0 };
 export const emptyFixedOpsRow = { name: "", annualAmount: 0, productShareRate: 100 };
 export const emptyCacItemRow = { name: "", channel: "", amount: 0 };
 export const emptyCacChannelRow = { channel: "", newLicenses: 0 };
+export const emptyCostLayerRow = { layer: "", scope: "", cacTreatment: "" };
+export const emptyFixedOpexGroupRow = { group: "", content: "", annualAmount: 0 };
+export const emptyCostPlacementRow = { item: "", costPlace: "" };
+export const emptyChannelMetricRow = { channel: "", metric: "" };
+export const emptyB2cCogsRow = { item: "", calculation: "", layer: "" };
+export const emptyPlanChannelRow = { channel: "", eligibleTarget: 0 };
+export const emptyPlanPoolItemRow = {
+  name: "",
+  calculation: "",
+  channel: "",
+  pnlAmount: 0,
+  cashAmount: 0,
+};
+export const emptyPlanActualRow = {
+  channel: "",
+  actualSpend: 0,
+  actualEligible: 0,
+  chatbotAssistedCompletion: 0,
+};
 
 export const emptyTierRow = { name: "", unitPrice: 0 };
 export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
