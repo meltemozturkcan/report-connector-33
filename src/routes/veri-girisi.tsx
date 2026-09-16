@@ -18,6 +18,7 @@ import {
   emptyFirstYearCostRow,
   emptyFixedItemRow,
   emptyMonthlyRow,
+  emptyCashCollectionRow,
   emptyNonRevenueRow,
   emptyOtherRevenueRow,
   emptyPriceCatalogRow,
@@ -643,6 +644,21 @@ function DataEntryPage() {
               { key: "nature", label: "Finansal niteliği", type: "text", width: "22%" },
               { key: "condition", label: "Koşul", type: "text", width: "36%" },
               { key: "amount", label: "Tutar / etki (TL)" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Nakit akışı / tahsilat takibi"
+            description="Yalnızca o ay faturalandırılan ve tahsil edilen tutarlar yazılır; toplam tahsilat otomatik hesaplanır."
+            rows={draft.feasibility.cashCollections}
+            emptyRow={emptyCashCollectionRow}
+            onChange={(rows) => patch("feasibility", { ...draft.feasibility, cashCollections: rows })}
+            addLabel="Dönem ekle"
+            columns={[
+              { key: "period", label: "Dönem", type: "text", width: "28%" },
+              { key: "pilot", label: "Pilot tahsilatı (TL)" },
+              { key: "pilotConversion", label: "Pilot dönüşümü yıllık abonelik (TL)" },
+              { key: "newAnnual", label: "Yeni yıllık profesyonel abonelik (TL)" },
             ]}
           />
 

@@ -390,6 +390,7 @@ export function computeFeasibility(input: FeasibilityInput) {
     tiers,
     priceCatalog: input.priceCatalog,
     nonRevenueItems: input.nonRevenueItems,
+    cashCollections: input.cashCollections,
     periods,
     current,
     first,
