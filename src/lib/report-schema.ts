@@ -116,6 +116,31 @@ export const reportInputSchema = z.object({
     method: z.enum(["blended", "weighted"]).default("weighted"),
     currencyNote: text.default("Tutarlar TL, oranlar %"),
     tiers: z.array(z.object({ name: text, unitPrice: num })).default([]),
+    /**
+     * Fiyat listesi (KDV hariç baz fiyatlar). Yalnızca referans kataloğudur;
+     * BEP hesabı katman fiyatları ve abonelik dışı gelir kalemleri üzerinden yürür.
+     */
+    priceCatalog: z
+      .array(
+        z.object({
+          name: text,
+          price: num.default(0),
+          unit: text.default(""),
+          scope: text.default(""),
+        }),
+      )
+      .default([]),
+    /** Gelir olmayan veya geliri azaltan kalemler (ücretsiz pilot, indirimler, üçüncü taraf bedeli). */
+    nonRevenueItems: z
+      .array(
+        z.object({
+          name: text,
+          nature: text.default(""),
+          condition: text.default(""),
+          amount: num.default(0),
+        }),
+      )
+      .default([]),
     periods: z
       .array(
         z.object({
@@ -216,6 +241,8 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
 });
 
 export const emptyTierRow = { name: "", unitPrice: 0 };
+export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
+export const emptyNonRevenueRow = { name: "", nature: "", condition: "", amount: 0 };
 export const emptyOtherRevenueRow = { name: "", volume: 0, unitPrice: 0, hypothesis: "" };
 export const emptyFixedItemRow = { name: "", amount: 0 };
 export const emptyFirstYearCostRow = {
