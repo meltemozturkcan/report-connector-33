@@ -489,7 +489,9 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
   workingCapital: {},
   financing: {},
   capex: {},
+  projection: {},
   forecast: {},
+
   unitEconomics: [],
   cac: {},
   ltv: {},
