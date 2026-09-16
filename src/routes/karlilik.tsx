@@ -49,14 +49,22 @@ function ProfitabilityPage() {
     );
   }
 
-  const bridge = [
-    { label: "Önceki ay FAVÖK marjı", value: previousMargin.ebitda },
-    { label: "Hammadde maliyeti etkisi", value: -1.4 },
-    { label: "Ürün karması etkisi", value: -0.4 },
-    { label: "Fiyat artışı etkisi", value: 0.9 },
-    { label: "Faaliyet gideri kaldıracı", value: -0.1 },
-    { label: "Bu ay FAVÖK marjı", value: currentMargin.ebitda },
-  ];
+  const baseScenarioYears = projection.scenariosAccrual.find((row) => row.name === "Baz")?.years ?? [];
+  const projectionYear = baseScenarioYears[baseScenarioYears.length - 1];
+  const netProfitBridge: { label: string; amount: number; kind: "total" | "cost" }[] = projectionYear
+    ? [
+        { label: "Net satış", amount: projectionYear.netSales, kind: "total" },
+        { label: "Satışların maliyeti", amount: -projectionYear.variableCost, kind: "cost" },
+        { label: "Brüt kâr", amount: projectionYear.grossProfit, kind: "total" },
+        { label: "Faaliyet gideri", amount: -projectionYear.opex, kind: "cost" },
+        { label: "FAVÖK", amount: projectionYear.ebitda, kind: "total" },
+        { label: "Amortisman", amount: -projectionYear.amortization, kind: "cost" },
+        { label: "Finansal maliyet", amount: -projectionYear.financialCost, kind: "cost" },
+        { label: "Vergi", amount: -projectionYear.tax, kind: "cost" },
+        { label: "Net kâr", amount: projectionYear.netProfit, kind: "total" },
+      ]
+    : [];
+
 
   return (
     <AppShell>
