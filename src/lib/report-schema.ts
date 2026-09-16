@@ -10,6 +10,23 @@ import { z } from "zod";
 const num = z.coerce.number().finite();
 const text = z.string().trim();
 
+/**
+ * Gider kalemlerinin gidebileceği yerler. Bir kalem yalnızca bir yere yazılır;
+ * yalnızca CAC kovaları müşteri kazanım maliyetine girer.
+ */
+export const cacBuckets = [
+  "B2C CAC",
+  "B2B CAC",
+  "Yönlendirme CAC",
+  "Ürün COGS",
+  "Ürün operasyon",
+  "Ar-Ge / ürün OPEX",
+  "Genel yönetim",
+  "Uzman hizmet maliyeti",
+] as const;
+
+export const cacBucketNames: string[] = ["B2C CAC", "B2B CAC", "Yönlendirme CAC"];
+
 export const monthlyInputSchema = z.object({
   month: text.min(1, "Ay adı gerekli"),
   sales: num,
