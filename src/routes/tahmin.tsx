@@ -104,7 +104,7 @@ function ProjectionPage() {
     <AppShell>
       <PageHeader
         title="Projeksiyon 2027–2032"
-        description="Sonuçlar elle girilmez: gelir fizibilite dönemlerinden, maliyet ham gider defterinden, nakit ise CAPEX ve finansman satırlarından gelir. Net kâr = FAVÖK − amortisman − finansal maliyet − vergi."
+        description="Bu sayfadaki tutarlar TL'dir. Sonuçlar elle girilmez: gelir fizibilite dönemlerinden, maliyet ham gider defterinden, nakit ise CAPEX ve finansman satırlarından gelir. Net kâr = FAVÖK − amortisman − finansal maliyet − vergi."
       />
 
       <Section
