@@ -34,7 +34,10 @@ import {
   emptyFirstYearCostRow,
   emptyFixedItemRow,
   emptyMonthlyRow,
+  emptyCapexYearRow,
   emptyCashCollectionRow,
+  emptyFinancingYearRow,
+
   emptyNonRevenueRow,
   emptyRevenueChannelRow,
   emptyOtherRevenueRow,
