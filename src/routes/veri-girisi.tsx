@@ -616,6 +616,8 @@ function DataEntryPage() {
                       { length: tierCount },
                       (_, index) => existing?.counts[index] ?? 0,
                     ),
+                    revenueRecognitionRate: existing?.revenueRecognitionRate ?? 0,
+                    recognizedRevenueOverride: existing?.recognizedRevenueOverride ?? 0,
                     otherRevenue: existing?.otherRevenue ?? 0,
                     fixedCostOverride: existing?.fixedCostOverride ?? 0,
                   };

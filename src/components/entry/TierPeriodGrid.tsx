@@ -7,6 +7,8 @@ export type PeriodRow = {
   period: string;
   stage: string;
   counts: number[];
+  revenueRecognitionRate: number;
+  recognizedRevenueOverride: number;
   otherRevenue: number;
   fixedCostOverride: number;
 };
