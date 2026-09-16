@@ -23,7 +23,9 @@ const clampRate = (value: number) => Math.min(Math.max(value, 0), 100);
 
 export type SpendLedgerLine = {
   name: string;
+  mainClass: string;
   bucket: string;
+  channel: string;
   period: string;
   amount: number;
   attributionRate: number;
@@ -31,6 +33,13 @@ export type SpendLedgerLine = {
   unallocatedAmount: number;
   countsInCac: boolean;
   note: string;
+};
+
+export type SpendClassTotal = {
+  mainClass: string;
+  amount: number;
+  attributedAmount: number;
+  unallocatedAmount: number;
 };
 
 export type CohortChannelResult = {
@@ -101,7 +110,9 @@ export function computeAcquisition(input: AcquisitionInput) {
     const attributedAmount = (item.amount * rate) / 100;
     return {
       name: item.name,
+      mainClass: item.mainClass ?? "",
       bucket: item.bucket,
+      channel: item.channel ?? "",
       period: item.period,
       amount: item.amount,
       attributionRate: rate,
@@ -122,6 +133,20 @@ export function computeAcquisition(input: AcquisitionInput) {
       countsInCac: cacBucketNames.includes(bucket),
     };
   });
+
+  /** Ham gider defteri ana sınıf toplamları: tüm faaliyet gideri bir kez görünür. */
+  const classTotals: SpendClassTotal[] = [
+    ...new Set(ledger.map((line) => line.mainClass || "Sınıflandırılmadı")),
+  ].map((mainClass) => {
+    const lines = ledger.filter((line) => (line.mainClass || "Sınıflandırılmadı") === mainClass);
+    return {
+      mainClass,
+      amount: lines.reduce((sum, line) => sum + line.amount, 0),
+      attributedAmount: lines.reduce((sum, line) => sum + line.attributedAmount, 0),
+      unallocatedAmount: lines.reduce((sum, line) => sum + line.unallocatedAmount, 0),
+    };
+  });
+  const rawOpexTotal = ledger.reduce((sum, line) => sum + line.amount, 0);
 
   const poolFor = (bucket: string) =>
     ledger
@@ -255,10 +280,28 @@ export function computeAcquisition(input: AcquisitionInput) {
   const fixedOpsPerLicense = safeDiv(fixedOpsAnnualTotal, activeLicenseEquivalent);
   const fullCostBeforeCac = directAccountCost + fixedOpsPerLicense;
 
+  /**
+   * B2B/yönlendirme CAC'i önce ham gider defterinden izlenir: defterde B2B CAC
+   * veya Yönlendirme CAC kovasına atfedilmiş ve kanalı yazılmış paylar kanal
+   * harcaması olur. cacItems yalnızca defterde satırı olmayan kalemler içindir;
+   * böylece aynı nakit gider ikinci kez CAC olarak eklenmez.
+   */
+  const ledgerCacLines = ledger.filter(
+    (line) =>
+      (line.bucket === "B2B CAC" || line.bucket === "Yönlendirme CAC") &&
+      line.attributedAmount > 0,
+  );
   const cacChannels: B2bCacChannelResult[] = b2b.cacChannels.map((channel) => {
-    const items = b2b.cacItems
-      .filter((item) => item.channel.trim() === channel.channel.trim())
-      .map((item) => ({ name: item.name, amount: item.amount }));
+    const key = channel.channel.trim();
+    const ledgerItems = ledgerCacLines
+      .filter((line) => line.channel.trim() === key)
+      .map((line) => ({ name: `${line.name} (ham gider defterinden)`, amount: line.attributedAmount }));
+    const items = [
+      ...ledgerItems,
+      ...b2b.cacItems
+        .filter((item) => item.channel.trim() === key)
+        .map((item) => ({ name: item.name, amount: item.amount })),
+    ];
     const spend = items.reduce((sum, item) => sum + item.amount, 0);
     return {
       channel: channel.channel,
@@ -268,10 +311,14 @@ export function computeAcquisition(input: AcquisitionInput) {
       items,
     };
   });
-  const unassignedCacItems = b2b.cacItems.filter(
-    (item) =>
-      !b2b.cacChannels.some((channel) => channel.channel.trim() === item.channel.trim()),
-  );
+  const unassignedCacItems = [
+    ...b2b.cacItems.filter(
+      (item) => !b2b.cacChannels.some((channel) => channel.channel.trim() === item.channel.trim()),
+    ),
+    ...ledgerCacLines
+      .filter((line) => !b2b.cacChannels.some((channel) => channel.channel.trim() === line.channel.trim()))
+      .map((line) => ({ name: line.name, channel: line.channel, amount: line.attributedAmount })),
+  ];
   const b2bCacSpend = cacChannels.reduce((sum, row) => sum + row.spend, 0);
   const b2bNewLicenses = cacChannels.reduce((sum, row) => sum + row.newLicenses, 0);
   const weightedB2bCac = safeDiv(b2bCacSpend, b2bNewLicenses);
@@ -403,6 +450,17 @@ export function computeAcquisition(input: AcquisitionInput) {
     actualCac: safeDiv(planActualSpend, planActualEligible),
   };
 
+  /**
+   * Aylık B2C plan harcaması yıllık dijital pazarlama bütçesinin içinden düşer;
+   * ek bütçe değildir. 12 aya çıkarılmış plan, defterden B2C'ye atfedilen yıllık
+   * bütçeyi aşıyorsa mükerrer bütçe uyarısı verilir.
+   */
+  if (planPool > 0 && b2cCacPool > 0 && planPool * 12 > b2cCacPool + 1) {
+    warnings.push(
+      `${plan.period || "Aylık"} B2C planı yıllığa çevrildiğinde ${Math.round(planPool * 12)} TL; ham gider defterinde B2C edinimine atfedilen yıllık bütçe ${Math.round(b2cCacPool)} TL. Plan harcaması yıllık bütçenin içinden düşmelidir, üzerine eklenmez.`,
+    );
+  }
+
   const fixedOpexGroups = input.fixedOpexGroups.map((row) => ({ ...row }));
   const fixedOpexTotal = fixedOpexGroups.reduce((sum, row) => sum + row.annualAmount, 0);
 
@@ -427,6 +485,8 @@ export function computeAcquisition(input: AcquisitionInput) {
     fixedOpexTotal,
     ledger,
     bucketTotals,
+    classTotals,
+    rawOpexTotal,
     b2cCacPool,
     b2bCacPool,
     referralCacPool,

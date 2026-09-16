@@ -1341,8 +1341,8 @@ function DataEntryPage() {
           </p>
 
           <RepeatTable
-            label="Edinim harcaması defteri"
-            description="CAC'e girmeyen kalemleri de buraya yazın; doğru kovada (Ürün COGS, Ürün operasyon, Ar-Ge / ürün OPEX, Genel yönetim, Uzman hizmet maliyeti) tutulduklarında kanal CAC'ine karışmazlar."
+            label="Ham faaliyet gideri defteri"
+            description="Her harcama bir kez girilir. CAC'e girmeyen kalemleri de yazın; doğru yerde (Ürün COGS, Ürün operasyon, Ar-Ge / ürün OPEX, Genel yönetim, Uzman hizmet maliyeti) tutulduklarında kanal CAC'ine karışmazlar. B2B CAC / Yönlendirme CAC kovasındaki satırlarda kanal adını kanal tablosuyla aynı yazın; atfedilen pay kanal CAC'ine oradan gelir, ayrıca CAC alt kalemi eklemeyin."
             rows={draft.acquisition.spendLedger}
             emptyRow={emptySpendLedgerRow}
             onChange={(rows) =>
@@ -1350,12 +1350,14 @@ function DataEntryPage() {
             }
             addLabel="Harcama kalemi ekle"
             columns={[
-              { key: "name", label: "Kalem", type: "text", width: "24%" },
-              { key: "bucket", label: "Yer", type: "text", width: "16%" },
-              { key: "period", label: "Dönem", type: "text", width: "12%" },
+              { key: "name", label: "Kalem", type: "text", width: "20%" },
+              { key: "mainClass", label: "Ana sınıf", type: "text", width: "14%" },
+              { key: "bucket", label: "Yer", type: "text", width: "12%" },
+              { key: "channel", label: "Kanal", type: "text", width: "12%" },
+              { key: "period", label: "Dönem", type: "text", width: "8%" },
               { key: "amount", label: "Tutar (TL)" },
               { key: "attributionRate", label: "Atıf oranı (%)" },
-              { key: "note", label: "Not", type: "text", width: "16%" },
+              { key: "note", label: "Not", type: "text", width: "14%" },
             ]}
           />
 
