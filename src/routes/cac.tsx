@@ -224,3 +224,113 @@ function CacPage() {
     </AppShell>
   );
 }
+
+/** Aylık rapor verisi yokken edinim modelinden hesaplanan kanal bazlı CAC görünümü. */
+function AcquisitionCacFallback() {
+  const model = useAcquisition();
+  const plan = model.b2cPlan;
+
+  return (
+    <>
+      <PageHeader
+        title="Müşteri Kazanım Maliyeti (CAC)"
+        description="Aylık rapor verisi girilmedi. Aşağıdaki rakamlar edinim (CAC) maliyet havuzu ve kanal hedeflerinden hesaplanır."
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Planlanan freemium CAC"
+          value={`${formatAmount(plan.freemiumCac, 2)} TL`}
+          note={`${plan.period || "Dönem"} · havuz ${formatAmount(plan.pool)} TL`}
+          delta={{
+            text:
+              plan.buffer >= 0
+                ? `Tampon ${formatAmount(plan.buffer)} TL`
+                : `Üst sınır ${formatAmount(-plan.buffer)} TL aşıldı`,
+            tone: plan.buffer >= 0 ? "positive" : "negative",
+          }}
+        />
+        <KpiCard
+          label="Hedef CAC üst sınırı"
+          value={`${formatAmount(plan.cacTarget)} TL`}
+          note={`${formatAmount(plan.eligibleTotal)} uygun ücretsiz ebeveyn · sınır ${formatAmount(plan.cacCeiling)} TL`}
+        />
+        <KpiCard
+          label="Ücretli B2C CAC"
+          value={`${formatAmount(plan.paidCac, 2)} TL`}
+          note={`${formatAmount(plan.paidParents, 1)} ücretli ebeveyn · dönüşüm ${formatPercent(plan.conversionRate, 1)}`}
+        />
+        <KpiCard
+          label="Gerçekleşen freemium CAC"
+          value={plan.actualEligible > 0 ? `${formatAmount(plan.actualCac, 2)} TL` : "—"}
+          note={`Gerçek harcama ${formatAmount(plan.actualSpend)} TL · ${formatAmount(plan.actualEligible)} uygun ebeveyn`}
+        />
+      </div>
+
+      <Section
+        title={plan.period ? `Kanal bazlı planlanan CAC — ${plan.period}` : "Kanal bazlı planlanan CAC"}
+        description="Kanala atanmış doğrudan maliyet + ortak maliyetin uygun ebeveyn payına göre dağıtımı."
+      >
+        <DataTable
+          caption="Kanal bazlı maliyet ve planlanan CAC"
+          rowKey={(row) => row.channel}
+          rows={[
+            ...plan.channels,
+            {
+              channel: "Toplam / blended",
+              eligibleTarget: plan.eligibleTotal,
+              eligibleShare: 100,
+              directCost: plan.directCost,
+              sharedCost: plan.sharedCost,
+              totalCost: plan.pool,
+              plannedCac: plan.freemiumCac,
+            },
+          ]}
+          columns={[
+            { header: "Kanal", cell: (row) => row.channel },
+            { header: "Uygun ücretsiz ebeveyn", align: "right", cell: (row) => formatAmount(row.eligibleTarget) },
+            { header: "Payı", align: "right", cell: (row) => formatPercent(row.eligibleShare, 1) },
+            { header: "Doğrudan maliyet (TL)", align: "right", cell: (row) => formatAmount(row.directCost) },
+            { header: "Ortak pay (TL)", align: "right", cell: (row) => formatAmount(row.sharedCost, 2) },
+            { header: "Toplam maliyet (TL)", align: "right", cell: (row) => formatAmount(row.totalCost, 2) },
+            { header: "Planlanan CAC (TL)", align: "right", cell: (row) => formatAmount(row.plannedCac, 2) },
+          ]}
+        />
+        <Insight question="Hedef tutuyor mu?">
+          Maliyet havuzu {formatAmount(plan.pool)} TL, üst sınır {formatAmount(plan.cacCeiling)} TL;
+          planlanan freemium CAC {formatAmount(plan.freemiumCac, 2)} TL. Ücretli tarafta{" "}
+          {formatPercent(plan.conversionRate, 1)} dönüşüm ile ücretli CAC{" "}
+          {formatAmount(plan.paidCac, 2)} TL oluyor.
+        </Insight>
+      </Section>
+
+      {plan.actuals.length > 0 ? (
+        <Section
+          title="Dönem sonu kanıt tablosu"
+          description="Gerçek harcama ÷ gerçek uygun ücretsiz ebeveyn = gerçek freemium CAC."
+        >
+          <DataTable
+            caption="Gerçekleşen kanal maliyetleri"
+            rowKey={(row) => row.channel}
+            rows={plan.actuals}
+            columns={[
+              { header: "Kanal", cell: (row) => row.channel },
+              { header: "Gerçek harcama (TL)", align: "right", cell: (row) => formatAmount(row.actualSpend) },
+              { header: "Uygun ücretsiz ebeveyn", align: "right", cell: (row) => formatAmount(row.actualEligible) },
+              {
+                header: "Gerçek freemium CAC (TL)",
+                align: "right",
+                cell: (row) => (row.actualEligible > 0 ? formatAmount(row.actualCac, 2) : "—"),
+              },
+              {
+                header: "Chatbot destekli tamamlanma",
+                align: "right",
+                cell: (row) => formatAmount(row.chatbotAssistedCompletion),
+              },
+            ]}
+          />
+        </Section>
+      ) : null}
+    </>
+  );
+}
