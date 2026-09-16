@@ -134,6 +134,20 @@ export function computeAcquisition(input: AcquisitionInput) {
     };
   });
 
+  /** Ham gider defteri ana sınıf toplamları: tüm faaliyet gideri bir kez görünür. */
+  const classTotals: SpendClassTotal[] = [
+    ...new Set(ledger.map((line) => line.mainClass || "Sınıflandırılmadı")),
+  ].map((mainClass) => {
+    const lines = ledger.filter((line) => (line.mainClass || "Sınıflandırılmadı") === mainClass);
+    return {
+      mainClass,
+      amount: lines.reduce((sum, line) => sum + line.amount, 0),
+      attributedAmount: lines.reduce((sum, line) => sum + line.attributedAmount, 0),
+      unallocatedAmount: lines.reduce((sum, line) => sum + line.unallocatedAmount, 0),
+    };
+  });
+  const rawOpexTotal = ledger.reduce((sum, line) => sum + line.amount, 0);
+
   const poolFor = (bucket: string) =>
     ledger
       .filter((line) => line.bucket === bucket)
