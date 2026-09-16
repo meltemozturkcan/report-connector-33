@@ -83,3 +83,11 @@ export function useFeasibility(): FeasibilityModel & { isLoading: boolean } {
   );
   return { ...model, isLoading: query.isLoading };
 }
+
+/** 2027–2032 projeksiyon modeli. Projeksiyon ve kârlılık sayfaları bunu kullanır. */
+export function useProjection(): ProjectionModel & { isLoading: boolean } {
+  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
+  const model = useMemo(() => computeProjection(query.data ?? emptyReportInput), [query.data]);
+  return { ...model, isLoading: query.isLoading };
+}
+
