@@ -168,6 +168,10 @@ function LtvPage() {
 /** Aylık rapor verisi yokken edinim modelinin Basic / Premium birim ekonomisi. */
 function AcquisitionLtvFallback() {
   const model = useAcquisition();
+  /** Ölçülen (cohort) CAC yoksa plandaki ücretli CAC kullanılır. */
+  const paidCac = model.measuredPaidCac > 0 ? model.measuredPaidCac : model.b2cPlan.paidCac;
+  const ratio = paidCac > 0 ? model.blendedLtv / paidCac : 0;
+  const payback = model.blendedContribution > 0 ? paidCac / model.blendedContribution : 0;
 
   return (
     <>
@@ -189,12 +193,13 @@ function AcquisitionLtvFallback() {
         />
         <KpiCard
           label="LTV / CAC"
-          value={formatRatio(model.b2cLtvToCac, 1)}
-          delta={{ text: "Hedef 3,0x", tone: model.b2cLtvToCac >= 3 ? "positive" : "negative" }}
+          value={formatRatio(ratio, 1)}
+          delta={{ text: "Hedef 3,0x", tone: ratio >= 3 ? "positive" : "negative" }}
         />
         <KpiCard
           label="Geri ödeme süresi"
-          value={`${formatAmount(model.b2cPaybackMonths, 1)} ay`}
+          value={`${formatAmount(payback, 1)} ay`}
+          note={`Karma katkı ${formatAmount(model.blendedContribution, 2)} TL / ay`}
         />
       </div>
 
