@@ -41,6 +41,7 @@ function FeasibilityPage() {
     otherRevenueItems,
     otherRevenueCatalogTotal,
     priceCatalog,
+    revenueChannels,
     nonRevenueItems,
     cashCollections,
     funnelBridge,
@@ -53,12 +54,16 @@ function FeasibilityPage() {
   if (!hasFeasibilityData || !current) {
     return (
       <AppShell>
-        {priceCatalog.length > 0 || nonRevenueItems.length > 0 || cashCollections.length > 0 ? (
+        {priceCatalog.length > 0 ||
+        nonRevenueItems.length > 0 ||
+        cashCollections.length > 0 ||
+        revenueChannels.length > 0 ? (
           <>
             <PageHeader
               title="Fizibilite ve Başa Baş Analizi"
               description="Fiyat listesi girildi. Başa baş hesabı için katman adetleri ve maliyet varsayımları da gerekiyor."
             />
+            <RevenueChannelSection rows={revenueChannels} />
             <PriceCatalogSection priceCatalog={priceCatalog} nonRevenueItems={nonRevenueItems} />
             <CashCollectionSection rows={cashCollections} />
           </>
@@ -191,6 +196,7 @@ function FeasibilityPage() {
         </div>
       </Section>
 
+      <RevenueChannelSection rows={revenueChannels} />
       <PriceCatalogSection priceCatalog={priceCatalog} nonRevenueItems={nonRevenueItems} />
       <CashCollectionSection rows={cashCollections} />
 
@@ -589,6 +595,32 @@ function CashCollectionSection({ rows }: { rows: CashCollectionRow[] }) {
         {formatAmount(totals.annualCount)} yıllık abonelik / {formatAmount(totals.annual)} TL — genel tahsilat{" "}
         {formatAmount(grandTotal)} TL.
       </p>
+    </Section>
+  );
+}
+
+type RevenueChannelRow = { channel: string; start: string; unit: string; driver: string };
+
+/** Gelir kanalları haritası: kanal, başlangıç, gelir birimi ve ana sürücü. */
+function RevenueChannelSection({ rows }: { rows: RevenueChannelRow[] }) {
+  if (rows.length === 0) return null;
+
+  return (
+    <Section
+      title="Gelir kanalları haritası"
+      description="Hangi kanal ne zaman devreye giriyor, geliri hangi birimden geliyor ve büyümesini ne sürüyor."
+    >
+      <DataTable
+        caption="Gelir kanalları, başlangıç zamanı ve ana sürücüleri"
+        rowKey={(row) => row.channel}
+        rows={rows}
+        columns={[
+          { header: "Kanal", cell: (row) => row.channel },
+          { header: "Başlangıç", cell: (row) => row.start || "—" },
+          { header: "Gelir birimi", cell: (row) => row.unit || "—" },
+          { header: "Ana sürücü", cell: (row) => row.driver || "—" },
+        ]}
+      />
     </Section>
   );
 }

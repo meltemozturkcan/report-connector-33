@@ -20,6 +20,7 @@ import {
   emptyMonthlyRow,
   emptyCashCollectionRow,
   emptyNonRevenueRow,
+  emptyRevenueChannelRow,
   emptyOtherRevenueRow,
   emptyPriceCatalogRow,
   emptyTierRow,
@@ -626,9 +627,25 @@ function DataEntryPage() {
           />
 
           <RepeatTable
+            label="Gelir kanalları haritası"
+            description="Her gelir kanalının başlangıç zamanı, gelir birimi ve ana sürücüsü. Referans niteliğindedir; başa baş hesabını doğrudan etkilemez."
+            rows={draft.feasibility.revenueChannels}
+            emptyRow={emptyRevenueChannelRow}
+            onChange={(rows) => patch("feasibility", { ...draft.feasibility, revenueChannels: rows })}
+            addLabel="Kanal ekle"
+            columns={[
+              { key: "channel", label: "Kanal", type: "text", width: "24%" },
+              { key: "start", label: "Başlangıç", type: "text", width: "20%" },
+              { key: "unit", label: "Gelir birimi", type: "text", width: "24%" },
+              { key: "driver", label: "Ana sürücü", type: "text", width: "32%" },
+            ]}
+          />
+
+          <RepeatTable
             label="Fiyat listesi (KDV hariç, 2026 baz)"
             description="Referans kataloğu: gelir kalemi, fiyat, birim/dönem ve kapsam koşulu. Hesaplamayı doğrudan etkilemez."
             rows={draft.feasibility.priceCatalog}
+
             emptyRow={emptyPriceCatalogRow}
             onChange={(rows) => patch("feasibility", { ...draft.feasibility, priceCatalog: rows })}
             addLabel="Fiyat kalemi ekle"

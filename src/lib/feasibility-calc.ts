@@ -389,6 +389,7 @@ export function computeFeasibility(input: FeasibilityInput) {
     currencyNote: input.currencyNote,
     tiers,
     priceCatalog: input.priceCatalog,
+    revenueChannels: input.revenueChannels,
     nonRevenueItems: input.nonRevenueItems,
     cashCollections: input.cashCollections,
     periods,
