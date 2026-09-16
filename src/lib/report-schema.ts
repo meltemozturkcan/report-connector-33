@@ -378,8 +378,28 @@ export const emptyReportInput: ReportInput = reportInputSchema.parse({
   cac: {},
   ltv: {},
   feasibility: {},
+  acquisition: {},
   narrative: {},
 });
+
+export const emptySpendLedgerRow = {
+  name: "",
+  bucket: cacBuckets[0],
+  amount: 0,
+  attributionRate: 100,
+  period: "",
+  note: "",
+};
+export const emptyCohortChannelRow = {
+  channel: "",
+  spend: 0,
+  eligibleFreeParents: 0,
+  paidParents: 0,
+};
+export const emptyPerReportCostRow = { name: "", unitCost: 0 };
+export const emptyFixedOpsRow = { name: "", annualAmount: 0, productShareRate: 100 };
+export const emptyCacItemRow = { name: "", channel: "", amount: 0 };
+export const emptyCacChannelRow = { channel: "", newLicenses: 0 };
 
 export const emptyTierRow = { name: "", unitPrice: 0 };
 export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
