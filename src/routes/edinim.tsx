@@ -196,8 +196,8 @@ function AcquisitionPage() {
               ...model.b2cPlan.poolItems,
               {
                 name: "B2C CAC maliyet havuzu",
-                calculation: "",
-                channel: "",
+                calculation: "Doğrudan + ortak maliyet",
+                channel: "Toplam",
                 isShared: false,
                 pnlAmount: model.b2cPlan.pool,
                 cashAmount: model.b2cPlan.cashPool,
