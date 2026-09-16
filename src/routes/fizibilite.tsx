@@ -52,10 +52,22 @@ function FeasibilityPage() {
   if (!hasFeasibilityData || !current) {
     return (
       <AppShell>
-        <EmptyState />
+        {priceCatalog.length > 0 || nonRevenueItems.length > 0 ? (
+          <>
+            <PageHeader
+              title="Fizibilite ve Başa Baş Analizi"
+              description="Fiyat listesi girildi. Başa baş hesabı için katman adetleri ve maliyet varsayımları da gerekiyor."
+            />
+            <PriceCatalogSection priceCatalog={priceCatalog} nonRevenueItems={nonRevenueItems} />
+          </>
+        ) : (
+          <EmptyState />
+        )}
       </AppShell>
     );
   }
+
+
 
   return (
     <AppShell>
