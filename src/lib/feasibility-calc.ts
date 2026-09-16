@@ -41,6 +41,14 @@ export type FeasibilityPeriod = {
   stage: string;
   tiers: TierResult[];
   totalAccounts: number;
+  /** Dönem başı (devreden) aktif lisans ve dönem içi net yeni lisans ihtiyacı. */
+  openingAccounts: number;
+  netNewAccounts: number;
+  /** Yıl sonu ARR = dönem sonu aktif lisans × yıllık fiyat. Gelir tablosu kalemi DEĞİLDİR. */
+  arr: number;
+  /** Dönem geliri hangi temele göre yazıldı. */
+  revenueBasis: "override" | "recognitionRate" | "arr";
+  revenueRecognitionRate: number;
   subscriptionRevenue: number;
   otherRevenue: number;
   totalRevenue: number;
