@@ -450,6 +450,17 @@ export function computeAcquisition(input: AcquisitionInput) {
     actualCac: safeDiv(planActualSpend, planActualEligible),
   };
 
+  /**
+   * Aylık B2C plan harcaması yıllık dijital pazarlama bütçesinin içinden düşer;
+   * ek bütçe değildir. 12 aya çıkarılmış plan, defterden B2C'ye atfedilen yıllık
+   * bütçeyi aşıyorsa mükerrer bütçe uyarısı verilir.
+   */
+  if (planPool > 0 && b2cCacPool > 0 && planPool * 12 > b2cCacPool + 1) {
+    warnings.push(
+      `${plan.period || "Aylık"} B2C planı yıllığa çevrildiğinde ${Math.round(planPool * 12)} TL; ham gider defterinde B2C edinimine atfedilen yıllık bütçe ${Math.round(b2cCacPool)} TL. Plan harcaması yıllık bütçenin içinden düşmelidir, üzerine eklenmez.`,
+    );
+  }
+
   const fixedOpexGroups = input.fixedOpexGroups.map((row) => ({ ...row }));
   const fixedOpexTotal = fixedOpexGroups.reduce((sum, row) => sum + row.annualAmount, 0);
 
