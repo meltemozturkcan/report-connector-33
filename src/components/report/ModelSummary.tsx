@@ -161,7 +161,7 @@ export function ModelSummary() {
       : null,
   ].filter((row): row is { label: string; value: string; detail: string } => row !== null);
 
-  const warnings = [...feasibility.firstYearCosts.warnings, ...acquisition.warnings];
+  const warnings = [...feasibility.missingInputs, ...acquisition.warnings];
 
   return (
     <Section
