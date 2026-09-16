@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/report/PageHeader";
 import { KpiCard } from "@/components/report/KpiCard";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
+import { ModelSummary, useHasModelData } from "@/components/report/ModelSummary";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -43,6 +44,7 @@ function ExecutiveSummary() {
     previousMonth,
     receivables,
   } = useReport();
+  const hasModelData = useHasModelData();
 
   if (!hasReportData) {
     return (
