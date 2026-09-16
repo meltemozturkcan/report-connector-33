@@ -179,6 +179,7 @@ function DataEntryPage() {
           <TabsTrigger value="birim">CAC / LTV</TabsTrigger>
           <TabsTrigger value="fizibilite">Fizibilite / BEP</TabsTrigger>
           <TabsTrigger value="ilkyil">İlk yıl Ar-Ge / şirket</TabsTrigger>
+          <TabsTrigger value="giderler">Faaliyet giderleri</TabsTrigger>
           <TabsTrigger value="edinim">Edinim (B2C)</TabsTrigger>
           <TabsTrigger value="b2b">B2B lisans maliyeti</TabsTrigger>
           <TabsTrigger value="yorum">Yorum ve aksiyon</TabsTrigger>
@@ -1173,6 +1174,40 @@ function DataEntryPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="giderler" className="space-y-6 border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Bu defter genel bir tablodur: şirketin her harcaması burada tek satırda ve tek bir kez
+            girilir. Atıf oranı kalemi böler — örneğin pazarlama personelinin %30'u B2C edinimine
+            ayrılıyorsa yalnız %30'u CAC havuzuna girer. CAC'e girmeyen kalemleri de yazın; doğru
+            yerde (Ürün COGS, Ürün operasyon, Ar-Ge / ürün OPEX, Genel yönetim, Uzman hizmet
+            maliyeti) tutulduklarında kanal CAC'ine karışmazlar. B2B CAC / Yönlendirme CAC
+            kovasındaki satırlarda kanal adını kanal tablosuyla aynı yazın; atfedilen pay kanal
+            CAC'ine oradan gelir, ayrıca CAC alt kalemi eklemeyin. Geçerli yerler:{" "}
+            {cacBuckets.join(", ")}. Tutarlar TL, oranlar %.
+          </p>
+
+          <RepeatTable
+            label="Ham faaliyet gideri defteri"
+            description="Her harcama bir kez girilir; buradan B2B CAC, B2C CAC, ürün operasyonu ve genel yönetime dağıtılır — aynı gider iki kez sayılmaz."
+            rows={draft.acquisition.spendLedger}
+            emptyRow={emptySpendLedgerRow}
+            onChange={(rows) =>
+              patch("acquisition", { ...draft.acquisition, spendLedger: rows })
+            }
+            addLabel="Harcama kalemi ekle"
+            columns={[
+              { key: "name", label: "Kalem", type: "text", width: "20%" },
+              { key: "mainClass", label: "Ana sınıf", type: "text", width: "14%" },
+              { key: "bucket", label: "Yer", type: "text", width: "12%" },
+              { key: "channel", label: "Kanal", type: "text", width: "12%" },
+              { key: "period", label: "Dönem", type: "text", width: "8%" },
+              { key: "amount", label: "Tutar (TL)" },
+              { key: "attributionRate", label: "Atıf oranı (%)" },
+              { key: "note", label: "Not", type: "text", width: "14%" },
+            ]}
+          />
+        </TabsContent>
+
         <TabsContent value="edinim" className="space-y-6 border border-border bg-card p-4">
           <RepeatTable
             label="Ana maliyet katmanları"
@@ -1335,31 +1370,9 @@ function DataEntryPage() {
           />
 
           <p className="text-sm text-muted-foreground">
-            Her gider kalemi defterde tek satırda girilir ve tek bir yere yazılır. Atıf oranı kalemi
-            böler: örneğin pazarlama personelinin %30'u B2C edinimine ayrılıyorsa yalnız %30'u CAC
-            havuzuna girer. Geçerli yerler: {cacBuckets.join(", ")}. Tutarlar TL, oranlar %.
+            Harcama kalemleri artık "Faaliyet giderleri" sekmesindeki genel defterde tek satırda
+            tutulur; atfedilen paylar kanal CAC'ine oradan gelir.
           </p>
-
-          <RepeatTable
-            label="Ham faaliyet gideri defteri"
-            description="Her harcama bir kez girilir. CAC'e girmeyen kalemleri de yazın; doğru yerde (Ürün COGS, Ürün operasyon, Ar-Ge / ürün OPEX, Genel yönetim, Uzman hizmet maliyeti) tutulduklarında kanal CAC'ine karışmazlar. B2B CAC / Yönlendirme CAC kovasındaki satırlarda kanal adını kanal tablosuyla aynı yazın; atfedilen pay kanal CAC'ine oradan gelir, ayrıca CAC alt kalemi eklemeyin."
-            rows={draft.acquisition.spendLedger}
-            emptyRow={emptySpendLedgerRow}
-            onChange={(rows) =>
-              patch("acquisition", { ...draft.acquisition, spendLedger: rows })
-            }
-            addLabel="Harcama kalemi ekle"
-            columns={[
-              { key: "name", label: "Kalem", type: "text", width: "20%" },
-              { key: "mainClass", label: "Ana sınıf", type: "text", width: "14%" },
-              { key: "bucket", label: "Yer", type: "text", width: "12%" },
-              { key: "channel", label: "Kanal", type: "text", width: "12%" },
-              { key: "period", label: "Dönem", type: "text", width: "8%" },
-              { key: "amount", label: "Tutar (TL)" },
-              { key: "attributionRate", label: "Atıf oranı (%)" },
-              { key: "note", label: "Not", type: "text", width: "14%" },
-            ]}
-          />
 
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
