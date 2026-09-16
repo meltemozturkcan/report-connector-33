@@ -1206,7 +1206,48 @@ function DataEntryPage() {
               { key: "note", label: "Not", type: "text", width: "14%" },
             ]}
           />
+
+          <RepeatTable
+            label="Ana maliyet katmanları"
+            description="Hangi katmanın B2C CAC'e girdiği burada tanımlanır."
+            rows={draft.acquisition.costLayers}
+            emptyRow={emptyCostLayerRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, costLayers: rows })}
+            addLabel="Katman ekle"
+            columns={[
+              { key: "layer", label: "Katman", type: "text", width: "22%" },
+              { key: "scope", label: "Kapsam", type: "text", width: "40%" },
+              { key: "cacTreatment", label: "B2C CAC'e girer mi?", type: "text", width: "38%" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Sabit işletme bütçesi (yıllık)"
+            description="CAC tablosunda görünen paylar bu bütçenin B2C'ye tahsis edilen kısmıdır; yeni gider değildir."
+            rows={draft.acquisition.fixedOpexGroups}
+            emptyRow={emptyFixedOpexGroupRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, fixedOpexGroups: rows })}
+            addLabel="Grup ekle"
+            columns={[
+              { key: "group", label: "Grup", type: "text", width: "24%" },
+              { key: "content", label: "İçerik", type: "text", width: "50%" },
+              { key: "annualAmount", label: "Yıllık tutar (TL)" },
+            ]}
+          />
+
+          <RepeatTable
+            label="Kalem → doğru maliyet yeri"
+            rows={draft.acquisition.costPlacements}
+            emptyRow={emptyCostPlacementRow}
+            onChange={(rows) => patch("acquisition", { ...draft.acquisition, costPlacements: rows })}
+            addLabel="Eşleme ekle"
+            columns={[
+              { key: "item", label: "Kalem", type: "text", width: "50%" },
+              { key: "costPlace", label: "Doğru maliyet yeri", type: "text", width: "50%" },
+            ]}
+          />
         </TabsContent>
+
 
         <TabsContent value="edinim" className="space-y-6 border border-border bg-card p-4">
           <p className="text-sm text-muted-foreground">
