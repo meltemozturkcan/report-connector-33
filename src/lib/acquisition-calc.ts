@@ -1,4 +1,4 @@
-import { cacBucketNames, type ReportInput } from "@/lib/report-schema";
+import { cacBucketNames, cacBuckets, type ReportInput } from "@/lib/report-schema";
 
 /**
  * Edinim (CAC) ekonomisi hesaplama motoru.
