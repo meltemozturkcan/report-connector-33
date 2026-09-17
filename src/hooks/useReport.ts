@@ -1,95 +1,58 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useReportWorkspace } from "@/hooks/report-workspace";
+import type { AcquisitionModel } from "@/lib/acquisition-calc";
+import type { FeasibilityModel } from "@/lib/feasibility-calc";
+import type { ProjectionModel } from "@/lib/projection-calc";
+import type { ReportModel } from "@/lib/report-calc";
+import type { ReportInput } from "@/lib/report-schema";
 
-import { supabase } from "@/integrations/supabase/client";
-import { computeAcquisition, type AcquisitionModel } from "@/lib/acquisition-calc";
-import { computeFeasibility, type FeasibilityModel } from "@/lib/feasibility-calc";
-import { computeProjection, type ProjectionModel } from "@/lib/projection-calc";
-import { computeReport, type ReportModel } from "@/lib/report-calc";
+export { REPORT_QUERY_KEY, fetchReportWorkbook } from "@/hooks/report-workspace";
 
-import { emptyReportInput, parseReportInput, type ReportInput } from "@/lib/report-schema";
+/**
+ * Veri girişi ve rapor sayfaları AYNI çalışma kopyasını kullanır
+ * (bkz. report-workspace.tsx). Veri girişinde yazılan bir değer kaydedilmeyi
+ * beklemeden tüm rapor sayfalarında görünür; arka planda otomatik kaydedilir.
+ */
 
-const QUERY_KEY = ["report-workbook"] as const;
-
-async function fetchReportInput(): Promise<ReportInput> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return emptyReportInput;
-
-  const { data, error } = await supabase
-    .from("report_workbook")
-    .select("data")
-    .eq("user_id", auth.user.id)
-    .maybeSingle();
-
-  if (error) throw error;
-  return parseReportInput(data?.data);
-}
-
-async function saveReportInput(input: ReportInput) {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error("Kaydetmek için giriş yapmalısınız.");
-
-  const { error } = await supabase
-    .from("report_workbook")
-    .upsert(
-      { user_id: auth.user.id, data: input as never },
-      { onConflict: "user_id" },
-    );
-
-  if (error) throw error;
-  return input;
-}
-
-/** Ham giriş verisi + kaydetme. Veri giriş sayfası bunu kullanır. */
+/** Ham giriş verisi + güncelleme ve kaydetme. Veri giriş sayfası bunu kullanır. */
 export function useReportInput() {
-  const queryClient = useQueryClient();
-  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
-
-  const mutation = useMutation({
-    mutationFn: saveReportInput,
-    onSuccess: (input) => queryClient.setQueryData(QUERY_KEY, input),
-  });
-
+  const workspace = useReportWorkspace();
   return {
-    input: query.data ?? emptyReportInput,
-    isLoading: query.isLoading,
-    error: query.error,
-    save: mutation.mutateAsync,
-    isSaving: mutation.isPending,
+    input: workspace.input,
+    update: workspace.update,
+    isLoading: workspace.isLoading,
+    save: workspace.saveNow,
+    isSaving: workspace.status === "saving",
+    status: workspace.status,
+    invalidSections: workspace.invalidSections,
   };
 }
 
 /** Hesaplanmış rapor modeli. Tüm rapor sayfaları bunu kullanır. */
 export function useReport(): ReportModel & { isLoading: boolean } {
-  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
-  const model = useMemo(() => computeReport(query.data ?? emptyReportInput), [query.data]);
-  return { ...model, isLoading: query.isLoading };
+  const { models, isLoading } = useReportWorkspace();
+  return { ...models.report, isLoading };
 }
 
-/** Edinim (CAC) ekonomisi modeli. Edinim sayfası bunu kullanır. */
+/** Edinim (CAC) ekonomisi modeli. */
 export function useAcquisition(): AcquisitionModel & { isLoading: boolean } {
-  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
-  const model = useMemo(
-    () => computeAcquisition((query.data ?? emptyReportInput).acquisition),
-    [query.data],
-  );
-  return { ...model, isLoading: query.isLoading };
+  const { models, isLoading } = useReportWorkspace();
+  return { ...models.acquisition, isLoading };
 }
 
-/** Fizibilite / BEP modeli. Fizibilite sayfası bunu kullanır. */
+/** Fizibilite / BEP modeli. */
 export function useFeasibility(): FeasibilityModel & { isLoading: boolean } {
-  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
-  const model = useMemo(
-    () => computeFeasibility((query.data ?? emptyReportInput).feasibility),
-    [query.data],
-  );
-  return { ...model, isLoading: query.isLoading };
+  const { models, isLoading } = useReportWorkspace();
+  return { ...models.feasibility, isLoading };
 }
 
-/** 2027–2032 projeksiyon modeli. Projeksiyon ve kârlılık sayfaları bunu kullanır. */
+/** 2027–2032 projeksiyon modeli. */
 export function useProjection(): ProjectionModel & { isLoading: boolean } {
-  const query = useQuery({ queryKey: QUERY_KEY, queryFn: fetchReportInput });
-  const model = useMemo(() => computeProjection(query.data ?? emptyReportInput), [query.data]);
-  return { ...model, isLoading: query.isLoading };
+  const { models, isLoading } = useReportWorkspace();
+  return { ...models.projection, isLoading };
 }
 
+/** Kaydedilmiş (sunucudaki) son sürüm; karşılaştırma gerektiğinde kullanılır. */
+export function useSavedReportInput(): ReportInput | undefined {
+  const { savedInput } = useReportWorkspace();
+  return savedInput;
+}

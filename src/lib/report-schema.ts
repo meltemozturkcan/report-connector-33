@@ -27,6 +27,18 @@ export const cacBuckets = [
 
 export const cacBucketNames: string[] = ["B2C CAC", "B2B CAC", "Yönlendirme CAC"];
 
+const bucketKey = (value: string) => value.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+
+/**
+ * Serbest metinle yazılmış "yer" değerini standart kova adına çevirir.
+ * "b2c cac", " B2C  CAC " gibi yazımlar "B2C CAC" kovasına düşer; tanınmayan
+ * değerler olduğu gibi kalır (ve CAC'e girmez).
+ */
+export function normalizeBucket(value: string): string {
+  const key = bucketKey(value ?? "");
+  return cacBuckets.find((bucket) => bucketKey(bucket) === key) ?? (value ?? "").trim();
+}
+
 export const monthlyInputSchema = z.object({
   month: text.min(1, "Ay adı gerekli"),
   sales: num,
@@ -99,7 +111,9 @@ export const reportInputSchema = z.object({
     ytdBudget: num.default(0),
     monthActual: num.default(0),
     projects: z
-      .array(z.object({ name: text, budget: num, actual: num, status: text.default("Devam ediyor") }))
+      .array(
+        z.object({ name: text, budget: num, actual: num, status: text.default("Devam ediyor") }),
+      )
       .default([]),
   }),
   /**
@@ -141,7 +155,6 @@ export const reportInputSchema = z.object({
   }),
   /** @deprecated Yıl sonu bütçe alanları artık elle girilmez; projeksiyondan gelir. */
   forecast: z.object({
-
     budgetFullYearSales: num.default(0),
     budgetFullYearEbitda: num.default(0),
     budgetFullYearNetCash: num.default(0),
@@ -406,12 +419,9 @@ export const reportInputSchema = z.object({
         cacItems: z
           .array(z.object({ name: text, channel: text.default(""), amount: num.default(0) }))
           .default([]),
-        cacChannels: z
-          .array(z.object({ channel: text, newLicenses: num.default(0) }))
-          .default([]),
+        cacChannels: z.array(z.object({ channel: text, newLicenses: num.default(0) })).default([]),
         /** Yıllık lisans kaybı (%); ölçülmeden 0 kalır, LTV hesaplanmaz. */
         annualChurnRate: num.default(0),
-
       })
       .default({}),
     /** Ana maliyet katmanları: hangi katman B2C CAC'e girer. */
@@ -423,9 +433,7 @@ export const reportInputSchema = z.object({
       .array(z.object({ group: text, content: text.default(""), annualAmount: num.default(0) }))
       .default([]),
     /** Kalem → doğru maliyet yeri eşlemesi (ör. chatbot kalemleri). */
-    costPlacements: z
-      .array(z.object({ item: text, costPlace: text.default("") }))
-      .default([]),
+    costPlacements: z.array(z.object({ item: text, costPlace: text.default("") })).default([]),
     /** Kanal başına ölçülecek metrik tanımı. */
     channelMetrics: z.array(z.object({ channel: text, metric: text.default("") })).default([]),
     /** B2C ürün COGS katmanı (CAC'ten ayrı izlenir). */
@@ -444,9 +452,7 @@ export const reportInputSchema = z.object({
         cacTarget: num.default(0),
         /** Mağaza içi tahsilat komisyonu (%); web tahsilatına uygulanmaz. */
         storeCommissionRate: num.default(0),
-        channels: z
-          .array(z.object({ channel: text, eligibleTarget: num.default(0) }))
-          .default([]),
+        channels: z.array(z.object({ channel: text, eligibleTarget: num.default(0) })).default([]),
         poolItems: z
           .array(
             z.object({
@@ -549,7 +555,13 @@ export const emptyTierRow = { name: "", unitPrice: 0 };
 export const emptyPriceCatalogRow = { name: "", price: 0, unit: "", scope: "" };
 export const emptyNonRevenueRow = { name: "", nature: "", condition: "", amount: 0 };
 export const emptyRevenueChannelRow = { channel: "", start: "", unit: "", driver: "" };
-export const emptyCashCollectionRow = { period: "", pilotCount: 0, pilot: 0, annualCount: 0, annual: 0 };
+export const emptyCashCollectionRow = {
+  period: "",
+  pilotCount: 0,
+  pilot: 0,
+  annualCount: 0,
+  annual: 0,
+};
 export const emptyCapexYearRow = { year: "", amount: 0, note: "" };
 export const emptyFinancingYearRow = {
   year: "",
@@ -568,7 +580,6 @@ export const emptyFirstYearCostRow = {
   amortizationYears: 0,
   note: "",
 };
-
 
 export const emptyMonthlyRow: MonthlyInput = {
   month: "",
@@ -601,41 +612,45 @@ export const emptyUnitEconomicsRow: UnitEconomicsInput = {
   grossMarginRate: 0,
 };
 
-/**
- * Kaydedilmiş ham JSON'u bölüm bölüm okur. Bir bölüm bozuksa yalnızca o bölüm
- * boş varsayılana döner; diğer bölümlerdeki girilmiş veri korunur.
- */
-export function parseReportInputDetailed(value: unknown): {
+export type ReportParseResult = {
   input: ReportInput;
+  /** Doğrulanamadığı için varsayılana dönen bölümler (ör. "acquisition"). */
   invalidSections: string[];
-} {
-  const raw =
-    value !== null && typeof value === "object" ? (value as Record<string, unknown>) : {};
-  const invalidSections: string[] = [];
-  const filled: Record<string, unknown> = {};
+};
 
-  for (const key of Object.keys(emptyReportInput)) {
+/**
+ * Kaydedilmiş ham JSON'u bölüm bölüm doğrular.
+ *
+ * Önceden tek bir alan bile doğrulanamazsa TÜM kayıt boş modele dönüyordu;
+ * sayfa boş görünüyor ve bir sonraki kayıt girilmiş veriyi siliyordu. Artık
+ * yalnızca hatalı bölüm varsayılana döner ve bu bölüm raporlanır.
+ */
+export function parseReportInputDetailed(value: unknown): ReportParseResult {
+  const raw =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  const shape = reportInputSchema.shape;
+  const invalidSections: string[] = [];
+  const output: Record<string, unknown> = {};
+
+  for (const key of Object.keys(shape) as (keyof typeof shape)[]) {
     const fallback = (emptyReportInput as Record<string, unknown>)[key];
-    const provided = raw[key];
-    if (provided === undefined || provided === null) {
-      filled[key] = fallback;
+    const section = raw[key];
+    if (section === undefined || section === null) {
+      output[key] = fallback;
       continue;
     }
-    const sectionSchema = (reportInputSchema.shape as Record<string, z.ZodTypeAny>)[key];
-    const parsed = sectionSchema?.safeParse(provided);
-    if (parsed?.success) {
-      filled[key] = parsed.data;
+    const parsed = shape[key].safeParse(section);
+    if (parsed.success) {
+      output[key] = parsed.data;
     } else {
+      output[key] = fallback;
       invalidSections.push(key);
-      filled[key] = fallback;
     }
   }
 
-  const result = reportInputSchema.safeParse(filled);
-  return {
-    input: result.success ? result.data : emptyReportInput,
-    invalidSections,
-  };
+  return { input: output as ReportInput, invalidSections };
 }
 
 /** Kaydedilmiş ham JSON'u güvenli biçimde giriş modeline dönüştürür. */

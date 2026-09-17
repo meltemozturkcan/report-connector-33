@@ -20,7 +20,12 @@ import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Insight } from "@/components/report/Insight";
-import { selectScenario, type CollectionView, type ScenarioName } from "@/lib/projection-calc";
+import {
+  buildNetProfitBridge,
+  selectScenario,
+  type CollectionView,
+  type ScenarioName,
+} from "@/lib/projection-calc";
 import { formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/tahmin")({
@@ -35,7 +40,8 @@ export const Route = createFileRoute("/tahmin")({
       { property: "og:title", content: "Projeksiyon 2027–2032" },
       {
         property: "og:description",
-        content: "Satış, maliyet ve nakit sürücülerinden otomatik hesaplanan çok yıllı projeksiyon.",
+        content:
+          "Satış, maliyet ve nakit sürücülerinden otomatik hesaplanan çok yıllı projeksiyon.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -61,10 +67,11 @@ function ProjectionPage() {
   const yearRow = useMemo(() => {
     const selected = active.years.find((row) => row.year === selectedYear);
     if (selected) return selected;
-    const withSales = [...active.years].reverse().find((row) => row.netSales !== 0 || row.opex !== 0);
+    const withSales = [...active.years]
+      .reverse()
+      .find((row) => row.netSales !== 0 || row.opex !== 0);
     return withSales ?? active.years[0];
   }, [active.years, selectedYear]);
-
 
   if (!model.hasProjectionData) {
     return (
@@ -75,21 +82,11 @@ function ProjectionPage() {
   }
 
   const showRemainingMonths =
-    yearRow !== undefined && yearRow.year.includes(String(currentYear)) && model.settings.remainingMonths > 0;
+    yearRow !== undefined &&
+    yearRow.year.includes(String(currentYear)) &&
+    model.settings.remainingMonths > 0;
 
-  const bridge = yearRow
-    ? [
-        { label: "Net satış", amount: yearRow.netSales, kind: "total" as const },
-        { label: "Satışların maliyeti", amount: -yearRow.variableCost, kind: "cost" as const },
-        { label: "Brüt kâr", amount: yearRow.grossProfit, kind: "total" as const },
-        { label: "Faaliyet gideri", amount: -yearRow.opex, kind: "cost" as const },
-        { label: "FAVÖK", amount: yearRow.ebitda, kind: "total" as const },
-        { label: "Amortisman", amount: -yearRow.amortization, kind: "cost" as const },
-        { label: "Finansal maliyet", amount: -yearRow.financialCost, kind: "cost" as const },
-        { label: "Vergi", amount: -yearRow.tax, kind: "cost" as const },
-        { label: "Net kâr", amount: yearRow.netProfit, kind: "total" as const },
-      ]
-    : [];
+  const bridge = yearRow ? buildNetProfitBridge(yearRow) : [];
 
   const trend = active.years.map((row) => ({
     year: row.year,
@@ -201,7 +198,11 @@ function ProjectionPage() {
 
       {yearRow ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <KpiCard label={`Net satış (${yearRow.year})`} value={formatAmount(yearRow.netSales)} note={yearRow.stage} />
+          <KpiCard
+            label={`Net satış (${yearRow.year})`}
+            value={formatAmount(yearRow.netSales)}
+            note={yearRow.stage}
+          />
           <KpiCard
             label="Brüt kâr"
             value={formatAmount(yearRow.grossProfit)}
@@ -224,7 +225,9 @@ function ProjectionPage() {
           />
           <KpiCard
             label="Net borç / FAVÖK"
-            value={yearRow.netDebtToEbitda === null ? "Ölçülmeli" : formatRatio(yearRow.netDebtToEbitda)}
+            value={
+              yearRow.netDebtToEbitda === null ? "Ölçülmeli" : formatRatio(yearRow.netDebtToEbitda)
+            }
             note={
               yearRow.netDebtToEbitda === null
                 ? "FAVÖK pozitif değil ya da borç bakiyesi girilmedi."
@@ -271,16 +274,26 @@ function ProjectionPage() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={bridge.map((row) => ({ label: row.label, amount: row.amount }))}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="label" fontSize={11} interval={0} angle={-20} height={60} textAnchor="end" />
+              <XAxis
+                dataKey="label"
+                fontSize={11}
+                interval={0}
+                angle={-20}
+                height={60}
+                textAnchor="end"
+              />
               <YAxis fontSize={11} />
               <Tooltip formatter={(value: number) => formatAmount(value)} />
-              <Bar dataKey="amount" name="Tutar" fill="hsl(var(--primary))" />
+              <Bar dataKey="amount" name="Tutar" fill="var(--primary)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </Section>
 
-      <Section title="2027–2032 kârlılık seyri" description="Net satış, FAVÖK ve net kâr; marjlar ikinci eksende.">
+      <Section
+        title="2027–2032 kârlılık seyri"
+        description="Net satış, FAVÖK ve net kâr; marjlar ikinci eksende."
+      >
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={trend}>
@@ -290,9 +303,20 @@ function ProjectionPage() {
               <YAxis yAxisId="right" orientation="right" fontSize={11} unit="%" />
               <Tooltip />
               <Legend />
-              <Bar yAxisId="left" dataKey="netSales" name="Net satış" fill="hsl(var(--muted-foreground))" />
-              <Bar yAxisId="left" dataKey="ebitda" name="FAVÖK" fill="hsl(var(--primary))" />
-              <Line yAxisId="left" type="monotone" dataKey="netProfit" name="Net kâr" strokeWidth={2} />
+              <Bar
+                yAxisId="left"
+                dataKey="netSales"
+                name="Net satış"
+                fill="var(--muted-foreground)"
+              />
+              <Bar yAxisId="left" dataKey="ebitda" name="FAVÖK" fill="var(--primary)" />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="netProfit"
+                name="Net kâr"
+                strokeWidth={2}
+              />
               <Line
                 yAxisId="right"
                 type="monotone"
@@ -314,8 +338,16 @@ function ProjectionPage() {
               { header: "Brüt kâr", align: "right", cell: (row) => formatAmount(row.grossProfit) },
               { header: "FAVÖK", align: "right", cell: (row) => formatAmount(row.ebitda) },
               { header: "Net kâr", align: "right", cell: (row) => formatAmount(row.netProfit) },
-              { header: "Net marj", align: "right", cell: (row) => formatPercent(row.netMarginRate) },
-              { header: "Dönem sonu nakit", align: "right", cell: (row) => formatAmount(row.closingCash) },
+              {
+                header: "Net marj",
+                align: "right",
+                cell: (row) => formatPercent(row.netMarginRate),
+              },
+              {
+                header: "Dönem sonu nakit",
+                align: "right",
+                cell: (row) => formatAmount(row.closingCash),
+              },
             ]}
             rows={active.years}
             rowKey={(row) => row.year}
@@ -323,13 +355,24 @@ function ProjectionPage() {
         </div>
       </Section>
 
-      <Section title="Senaryo karşılaştırması" description="Aynı sürücüler, farklı gelir ve maliyet sapmaları.">
+      <Section
+        title="Senaryo karşılaştırması"
+        description="Aynı sürücüler, farklı gelir ve maliyet sapmaları."
+      >
         <DataTable
           caption="Senaryo karşılaştırması"
           columns={[
             { header: "Senaryo", cell: (row) => row.name },
-            { header: "Gelir sapması", align: "right", cell: (row) => formatPercent(row.revenueDelta) },
-            { header: "Maliyet sapması", align: "right", cell: (row) => formatPercent(row.costDelta) },
+            {
+              header: "Gelir sapması",
+              align: "right",
+              cell: (row) => formatPercent(row.revenueDelta),
+            },
+            {
+              header: "Maliyet sapması",
+              align: "right",
+              cell: (row) => formatPercent(row.costDelta),
+            },
             {
               header: "Net satış",
               align: "right",
@@ -364,12 +407,32 @@ function ProjectionPage() {
           caption="Nakit köprüsü"
           columns={[
             { header: "Yıl", cell: (row) => row.year },
-            { header: "Dönem başı nakit", align: "right", cell: (row) => formatAmount(row.openingCash) },
-            { header: "Faaliyet nakdi", align: "right", cell: (row) => formatAmount(row.operatingCash) },
-            { header: "Yatırım (CAPEX)", align: "right", cell: (row) => formatAmount(row.investingCash) },
+            {
+              header: "Dönem başı nakit",
+              align: "right",
+              cell: (row) => formatAmount(row.openingCash),
+            },
+            {
+              header: "Faaliyet nakdi",
+              align: "right",
+              cell: (row) => formatAmount(row.operatingCash),
+            },
+            {
+              header: "Yatırım (CAPEX)",
+              align: "right",
+              cell: (row) => formatAmount(row.investingCash),
+            },
             { header: "Finansman", align: "right", cell: (row) => formatAmount(row.financingCash) },
-            { header: "Tahakkuk − tahsilat farkı", align: "right", cell: (row) => formatAmount(row.collectionGap) },
-            { header: "Dönem sonu nakit", align: "right", cell: (row) => formatAmount(row.closingCash) },
+            {
+              header: "Tahakkuk − tahsilat farkı",
+              align: "right",
+              cell: (row) => formatAmount(row.collectionGap),
+            },
+            {
+              header: "Dönem sonu nakit",
+              align: "right",
+              cell: (row) => formatAmount(row.closingCash),
+            },
           ]}
           rows={active.years}
           rowKey={(row) => row.year}
@@ -384,8 +447,16 @@ function ProjectionPage() {
           caption="Birim ekonomi karşılaştırması"
           columns={[
             { header: "Segment", cell: (row) => row.segment },
-            { header: "LTV", align: "right", cell: (row) => (row.ltv === null ? "Ölçülmeli" : formatAmount(row.ltv)) },
-            { header: "CAC", align: "right", cell: (row) => (row.cac === null ? "Ölçülmeli" : formatAmount(row.cac)) },
+            {
+              header: "LTV",
+              align: "right",
+              cell: (row) => (row.ltv === null ? "Ölçülmeli" : formatAmount(row.ltv)),
+            },
+            {
+              header: "CAC",
+              align: "right",
+              cell: (row) => (row.cac === null ? "Ölçülmeli" : formatAmount(row.cac)),
+            },
             {
               header: "LTV / CAC",
               align: "right",
@@ -394,7 +465,8 @@ function ProjectionPage() {
             {
               header: "Geri ödeme (ay)",
               align: "right",
-              cell: (row) => (row.paybackMonths === null ? "Ölçülmeli" : row.paybackMonths.toFixed(1)),
+              cell: (row) =>
+                row.paybackMonths === null ? "Ölçülmeli" : row.paybackMonths.toFixed(1),
             },
             { header: "Not", cell: (row) => row.note },
           ]}
@@ -404,8 +476,8 @@ function ProjectionPage() {
         <p className="mt-3 text-xs text-muted-foreground">
           Referans karma LTV/CAC:{" "}
           {model.referenceBlendedLtvToCac === null
-            ? "iki segmentten biri ölçülmediği için hesaplanmıyor"
-            : formatRatio(model.referenceBlendedLtvToCac)}
+            ? "iki segmentten biri veya yeni müşteri adetleri ölçülmediği için hesaplanmıyor"
+            : `${formatRatio(model.referenceBlendedLtvToCac)} (yeni müşteri adedine göre ağırlıklı)`}
         </p>
       </Section>
 

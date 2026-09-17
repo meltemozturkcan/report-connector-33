@@ -63,7 +63,7 @@ export function TierPeriodGrid({ tierNames, rows, onChange }: TierPeriodGridProp
       {tierNames.length === 0 ? (
         <p className="text-xs text-destructive">Önce katman ve fiyat listesini tanımlayın.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-border">

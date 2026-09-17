@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
@@ -9,6 +19,7 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
+import { cashTiedInsight } from "@/lib/insights";
 import { formatAmount } from "@/lib/format";
 
 export const Route = createFileRoute("/nakit")({
@@ -17,16 +28,21 @@ export const Route = createFileRoute("/nakit")({
       { title: "Nakit ve İşletme Sermayesi — Aylık Yönetim Raporu" },
       {
         name: "description",
-        content: "Nakit akışı köprüsü, alacak, stok ve ticari borçların seyri ile nakit dönüşüm döngüsü.",
+        content:
+          "Nakit akışı köprüsü, alacak, stok ve ticari borçların seyri ile nakit dönüşüm döngüsü.",
       },
       { property: "og:title", content: "Nakit ve İşletme Sermayesi" },
-      { property: "og:description", content: "Nakit azaldıysa nerede bağlandı? Alacak mı, stok mu, borç ödemesi mi?" },
+      {
+        property: "og:description",
+        content: "Nakit azaldıysa nerede bağlandı? Alacak mı, stok mu, borç ödemesi mi?",
+      },
     ],
   }),
   component: CashPage,
 });
 
 function CashPage() {
+  const model = useReport();
   const {
     cashConversionCycle,
     cashFlow,
@@ -36,7 +52,7 @@ function CashPage() {
     payables,
     receivables,
     workingCapital,
-  } = useReport();
+  } = model;
 
   if (!hasReportData) {
     return (
@@ -79,7 +95,10 @@ function CashPage() {
         />
       </div>
 
-      <Section title="Nakit köprüsü" description="FAVÖK'ten dönem sonu nakde giden yol.">
+      <Section
+        title="Nakit köprüsü"
+        description="Açılış nakdinden faaliyet, yatırım ve finansman hareketleriyle dönem sonu nakde giden yol."
+      >
         <DataTable
           caption="Nakit köprüsü"
           rowKey={(row) => row.name}
@@ -102,11 +121,26 @@ function CashPage() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={cashFlow.bridge} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} interval={0} tickLine={false} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+              <XAxis
+                dataKey="name"
+                stroke="var(--muted-foreground)"
+                fontSize={11}
+                interval={0}
+                tickLine={false}
+              />
+              <YAxis
+                stroke="var(--muted-foreground)"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
               <Tooltip
                 formatter={(value: number) => formatAmount(value)}
-                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
               />
               <Bar dataKey="value" fill="var(--primary)" />
             </BarChart>
@@ -129,7 +163,9 @@ function CashPage() {
             {
               header: "Değişim",
               align: "right",
-              cell: (row) => <Delta value={row.current - row.previous} invert={row.name !== "Ticari borçlar"} />,
+              cell: (row) => (
+                <Delta value={row.current - row.previous} invert={row.name !== "Ticari borçlar"} />
+              ),
             },
             { header: "Gün", align: "right", cell: (row) => `${row.days} gün` },
             { header: "Hedef", align: "right", cell: (row) => `${row.targetDays} gün` },
@@ -142,11 +178,26 @@ function CashPage() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={cashConversionCycle} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} unit=" g" />
+              <XAxis
+                dataKey="month"
+                stroke="var(--muted-foreground)"
+                fontSize={12}
+                tickLine={false}
+              />
+              <YAxis
+                stroke="var(--muted-foreground)"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                unit=" g"
+              />
               <Tooltip
                 formatter={(value: number) => `${value} gün`}
-                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
               />
               <Line dataKey="days" stroke="var(--destructive)" strokeWidth={2} dot={false} />
             </LineChart>
@@ -154,13 +205,7 @@ function CashPage() {
         </div>
       </Section>
 
-      <Insight question="Nakit azaldıysa nerede bağlandı?">
-        FAVÖK {formatAmount(currentMonth.ebitda)} olmasına rağmen ticari alacaklar{" "}
-        {formatAmount(receivables.current - receivables.previous)} ve stoklar{" "}
-        {formatAmount(inventory.current - inventory.previous)} arttı; ticari borçlar ise yalnızca{" "}
-        {formatAmount(payables.current - payables.previous)} yükseldi. Nakdin ana bağlandığı yer
-        alacak ve stoktur: toplam {formatAmount(cashFlow.bridge[2]?.value ?? 0)}.
-      </Insight>
+      <Insight question="Nakit azaldıysa nerede bağlandı?">{cashTiedInsight(model)}</Insight>
     </AppShell>
   );
 }

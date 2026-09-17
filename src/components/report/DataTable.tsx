@@ -17,7 +17,7 @@ type DataTableProps<T> = {
 
 export function DataTable<T>({ caption, columns, rows, rowKey }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         {caption ? <caption className="sr-only">{caption}</caption> : null}
         <thead>
