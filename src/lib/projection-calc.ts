@@ -38,6 +38,8 @@ export type ProjectionYear = {
   amortization: number;
   financialCost: number;
   pretaxProfit: number;
+  /** Geçmiş yıl zararından bu yılın matrahına düşülen tutar. */
+  lossOffset: number;
   tax: number;
   netProfit: number;
   netMarginRate: number;
@@ -252,6 +254,7 @@ export function computeProjection(input: ReportInput) {
         amortization,
         financialCost: financing.interest,
         pretaxProfit,
+        lossOffset,
         tax,
         netProfit,
         netMarginRate: safeDiv(netProfit, netSales) * 100,
@@ -342,8 +345,21 @@ export function computeProjection(input: ReportInput) {
 
   const b2bRatio = unitEconomics[0]?.ltvToCac ?? null;
   const b2cRatio = unitEconomics[1]?.ltvToCac ?? null;
+  /**
+   * Karma LTV/CAC yalnızca referanstır ve yeni müşteri adedine göre
+   * ağırlıklandırılır: (Σ LTV × adet) ÷ (Σ CAC × adet).
+   */
+  const b2bNewCustomers = input.acquisition.b2bLicense.cacChannels.reduce(
+    (sum, row) => sum + row.newLicenses,
+    0,
+  );
+  const b2cNewCustomers =
+    acquisition.cohortPaid > 0 ? acquisition.cohortPaid : acquisition.b2cPlan.paidParents;
+  const weightedLtv =
+    (b2bLtv ?? 0) * b2bNewCustomers + (b2cLtv > 0 ? b2cLtv : 0) * b2cNewCustomers;
+  const weightedCac = b2bCac * b2bNewCustomers + b2cCac * b2cNewCustomers;
   const referenceBlendedLtvToCac =
-    b2bRatio !== null && b2cRatio !== null ? (b2bRatio + b2cRatio) / 2 : null;
+    b2bRatio !== null && b2cRatio !== null && weightedCac > 0 ? weightedLtv / weightedCac : null;
 
 
   return {
