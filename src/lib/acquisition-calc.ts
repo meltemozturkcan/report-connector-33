@@ -1,4 +1,4 @@
-import { cacBucketNames, type ReportInput } from "@/lib/report-schema";
+import { cacBucketNames, cacBuckets, type ReportInput } from "@/lib/report-schema";
 
 /**
  * Edinim (CAC) ekonomisi hesaplama motoru.
@@ -20,6 +20,16 @@ export type AcquisitionInput = ReportInput["acquisition"];
 
 const safeDiv = (a: number, b: number) => (b === 0 ? 0 : a / b);
 const clampRate = (value: number) => Math.min(Math.max(value, 0), 100);
+
+/** Karşılaştırma için metni sadeleştirir (boşluk ve büyük/küçük harf farkı). */
+const flatten = (value: string) => value.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+
+/**
+ * Serbest yazılmış maliyet yeri adını tanımlı kovaya eşler; tanınmayan ad
+ * null döner ve uyarı üretilir (sessizce CAC dışına atılmaz).
+ */
+const normalizeBucket = (value: string): string | null =>
+  cacBuckets.find((bucket) => flatten(bucket) === flatten(value)) ?? null;
 
 export type SpendLedgerLine = {
   name: string;
@@ -105,20 +115,23 @@ export type AcquisitionModel = ReturnType<typeof computeAcquisition>;
 
 export function computeAcquisition(input: AcquisitionInput) {
   /* ---------- 1. Harcama defteri ve atıf ---------- */
+  const unknownBuckets: string[] = [];
   const ledger: SpendLedgerLine[] = input.spendLedger.map((item) => {
     const rate = clampRate(item.attributionRate);
     const attributedAmount = (item.amount * rate) / 100;
+    const bucket = normalizeBucket(item.bucket);
+    if (item.bucket.trim() && bucket === null) unknownBuckets.push(item.bucket.trim());
     return {
       name: item.name,
       mainClass: item.mainClass ?? "",
-      bucket: item.bucket,
+      bucket: bucket ?? item.bucket,
       channel: item.channel ?? "",
       period: item.period,
       amount: item.amount,
       attributionRate: rate,
       attributedAmount,
       unallocatedAmount: item.amount - attributedAmount,
-      countsInCac: cacBucketNames.includes(item.bucket),
+      countsInCac: bucket !== null && cacBucketNames.includes(bucket),
       note: item.note,
     };
   });
@@ -353,9 +366,25 @@ export function computeAcquisition(input: AcquisitionInput) {
     ...input.spendLedger
       .filter((item) => item.attributionRate > 100 || item.attributionRate < 0)
       .map((item) => `"${item.name}" atıf oranı %0–100 aralığında olmalı.`),
-    b2cCacPool > 0 && cohortSpend > 0 && Math.abs(b2cCacPool - cohortSpend) > 1
-      ? `Defterden B2C edinimine atfedilen harcama ${Math.round(b2cCacPool)} TL, cohort tablolarındaki harcama ${Math.round(cohortSpend)} TL: fark kanal tablolarına dağıtılmamış.`
-      : null,
+    ...[...new Set(unknownBuckets)].map(
+      (bucket) =>
+        `"${bucket}" geçerli bir maliyet yeri değil; kalem hiçbir kovaya girmedi. Geçerli yerler: ${cacBuckets.join(", ")}.`,
+    ),
+    /**
+     * Defter ↔ cohort mutabakatı yalnızca aynı dönemde yapılır: yıllık bir
+     * defter satırı aylık cohort ile karşılaştırılmaz.
+     */
+    ...cohorts
+      .map((cohort) => {
+        const key = flatten(cohort.cohort);
+        if (!key || cohort.totalSpend === 0) return null;
+        const ledgerSpend = ledger
+          .filter((line) => line.bucket === "B2C CAC" && flatten(line.period) === key)
+          .reduce((sum, line) => sum + line.attributedAmount, 0);
+        if (ledgerSpend === 0 || Math.abs(ledgerSpend - cohort.totalSpend) <= 1) return null;
+        return `${cohort.cohort}: defterden B2C edinimine atfedilen harcama ${Math.round(ledgerSpend)} TL, cohort tablosundaki harcama ${Math.round(cohort.totalSpend)} TL; fark kanallara dağıtılmamış.`;
+      })
+      .filter((item): item is string => item !== null),
     unassignedCacItems.length > 0
       ? `${unassignedCacItems.length} B2B CAC alt kalemi hiçbir kanala bağlı değil: kanal adını kanal tablosuyla aynı yazın.`
       : null,
@@ -398,7 +427,13 @@ export function computeAcquisition(input: AcquisitionInput) {
   const planFreemiumCac = safeDiv(planPool, planEligibleTotal);
   const planCacCeiling = planEligibleTotal * plan.cacTarget;
   const planBuffer = planCacCeiling - planPool;
-  const planConversionRate = clampRate(unit.freeToPaidRate);
+  /**
+   * Plan dönüşümü elle girilmediyse cohort'lardan ölçülen oran kullanılır;
+   * böylece ücretli CAC 0 görünmez.
+   */
+  const planConversionRate = clampRate(
+    unit.freeToPaidRate > 0 ? unit.freeToPaidRate : measuredConversionRate,
+  );
   const planPaidParents = (planEligibleTotal * planConversionRate) / 100;
   const planBasicParents = (planPaidParents * basicMix) / 100;
   const planPremiumParents = planPaidParents - planBasicParents;

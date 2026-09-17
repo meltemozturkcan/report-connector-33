@@ -601,18 +601,44 @@ export const emptyUnitEconomicsRow: UnitEconomicsInput = {
   grossMarginRate: 0,
 };
 
-/** Kaydedilmiş ham JSON'u güvenli biçimde giriş modeline dönüştürür. */
-export function parseReportInput(value: unknown): ReportInput {
-  // Kayıt kısmi olabilir (yalnızca bir bölüm doldurulmuş olabilir); eksik
-  // bölümler boş varsayılanlarla tamamlanır, böylece girilen veri kaybolmaz.
-  const raw = (value ?? {}) as Record<string, unknown>;
-  const filled: Record<string, unknown> = { ...raw };
+/**
+ * Kaydedilmiş ham JSON'u bölüm bölüm okur. Bir bölüm bozuksa yalnızca o bölüm
+ * boş varsayılana döner; diğer bölümlerdeki girilmiş veri korunur.
+ */
+export function parseReportInputDetailed(value: unknown): {
+  input: ReportInput;
+  invalidSections: string[];
+} {
+  const raw =
+    value !== null && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const invalidSections: string[] = [];
+  const filled: Record<string, unknown> = {};
+
   for (const key of Object.keys(emptyReportInput)) {
-    if (filled[key] === undefined || filled[key] === null) {
-      filled[key] = (emptyReportInput as Record<string, unknown>)[key];
+    const fallback = (emptyReportInput as Record<string, unknown>)[key];
+    const provided = raw[key];
+    if (provided === undefined || provided === null) {
+      filled[key] = fallback;
+      continue;
+    }
+    const sectionSchema = (reportInputSchema.shape as Record<string, z.ZodTypeAny>)[key];
+    const parsed = sectionSchema?.safeParse(provided);
+    if (parsed?.success) {
+      filled[key] = parsed.data;
+    } else {
+      invalidSections.push(key);
+      filled[key] = fallback;
     }
   }
 
   const result = reportInputSchema.safeParse(filled);
-  return result.success ? result.data : emptyReportInput;
+  return {
+    input: result.success ? result.data : emptyReportInput,
+    invalidSections,
+  };
+}
+
+/** Kaydedilmiş ham JSON'u güvenli biçimde giriş modeline dönüştürür. */
+export function parseReportInput(value: unknown): ReportInput {
+  return parseReportInputDetailed(value).input;
 }

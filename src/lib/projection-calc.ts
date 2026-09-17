@@ -38,6 +38,8 @@ export type ProjectionYear = {
   amortization: number;
   financialCost: number;
   pretaxProfit: number;
+  /** Geçmiş yıl zararından bu yılın matrahına düşülen tutar. */
+  lossOffset: number;
   tax: number;
   netProfit: number;
   netMarginRate: number;
@@ -96,15 +98,19 @@ export function computeProjection(input: ReportInput) {
     .map((tier) => tier.name)
     .filter((name) => name.trim() && !isIncludedTier(name));
 
-  /** Ham gider defterinden yıl bazlı faaliyet gideri ve satışların maliyeti. */
+  /**
+   * Ham gider defterinden yıl bazlı faaliyet gideri ve satışların maliyeti.
+   * Gelir tablosuna kalemin tamamı yazılır; atıf oranı yalnızca CAC analizinde
+   * hangi payın edinime düştüğünü gösterir, harcamanın kalanı da gerçek giderdir.
+   */
   const ledgerFor = (year: number) => {
     const lines = acquisition.ledger.filter((line) => yearOf(line.period) === year);
     const cogs = lines
       .filter((line) => line.bucket === "Ürün COGS")
-      .reduce((sum, line) => sum + line.attributedAmount, 0);
+      .reduce((sum, line) => sum + line.amount, 0);
     const opex = lines
       .filter((line) => line.bucket !== "Ürün COGS")
-      .reduce((sum, line) => sum + line.attributedAmount, 0);
+      .reduce((sum, line) => sum + line.amount, 0);
     return { cogs, opex, count: lines.length };
   };
 
@@ -150,6 +156,8 @@ export function computeProjection(input: ReportInput) {
     collectWarnings: boolean,
   ): ProjectionYear[] => {
     let openingCash = settings.openingCash;
+    /** Geçmiş yıl zararı sonraki yılların vergi matrahından düşülür. */
+    let lossCarryForward = 0;
     return yearsInPlan.map(({ period, year }) => {
       const includedTiers = period.tiers.filter((tier) => isIncludedTier(tier.name));
       const includedArr = includedTiers.reduce((sum, tier) => sum + tier.revenue, 0);
@@ -171,15 +179,36 @@ export function computeProjection(input: ReportInput) {
       const grossProfit = netSales - variableCost;
       const opexSource: ProjectionYear["opexSource"] =
         ledger.opex > 0 ? "ledger" : period.fixedCost > 0 ? "fixedCost" : "none";
-      const rawOpex = opexSource === "ledger" ? ledger.opex : opexSource === "fixedCost" ? period.fixedCost : 0;
+      /**
+       * Tablo 4.4-3 sabit maliyeti amortismanı içerir. Amortisman FAVÖK'ten
+       * sonra ayrı satır olduğu için sabit maliyetten çıkarılır; aynı tutar iki
+       * kez düşülmez.
+       */
+      const table443Amortization =
+        feasibility.fixedBreakdown.equipmentDepreciation +
+        feasibility.fixedBreakdown.buildingDepreciation;
+      const fixedCostAmortization =
+        opexSource === "fixedCost" && period.fixedCostSource === "table443"
+          ? Math.min(table443Amortization, period.fixedCost)
+          : 0;
+      const rawOpex =
+        opexSource === "ledger"
+          ? ledger.opex
+          : opexSource === "fixedCost"
+            ? period.fixedCost - fixedCostAmortization
+            : 0;
       const opex = rawOpex * (1 + costDelta / 100);
       const ebitda = grossProfit - opex;
 
-      const amortization = amortizationFor(year);
+      const amortization = amortizationFor(year) + fixedCostAmortization;
       const financing = financingFor(year);
       const pretaxProfit = ebitda - amortization - financing.interest;
       const taxRate = clampRate(settings.corporateTaxRate);
-      const tax = pretaxProfit > 0 ? (pretaxProfit * taxRate) / 100 : 0;
+      const lossOffset = pretaxProfit > 0 ? Math.min(lossCarryForward, pretaxProfit) : 0;
+      const taxBase = Math.max(pretaxProfit - lossOffset, 0);
+      const tax = (taxBase * taxRate) / 100;
+      lossCarryForward =
+        pretaxProfit < 0 ? lossCarryForward - pretaxProfit : lossCarryForward - lossOffset;
       const netProfit = pretaxProfit - tax;
 
       const investingCash = -capexFor(year);
@@ -225,6 +254,7 @@ export function computeProjection(input: ReportInput) {
         amortization,
         financialCost: financing.interest,
         pretaxProfit,
+        lossOffset,
         tax,
         netProfit,
         netMarginRate: safeDiv(netProfit, netSales) * 100,
@@ -315,8 +345,21 @@ export function computeProjection(input: ReportInput) {
 
   const b2bRatio = unitEconomics[0]?.ltvToCac ?? null;
   const b2cRatio = unitEconomics[1]?.ltvToCac ?? null;
+  /**
+   * Karma LTV/CAC yalnızca referanstır ve yeni müşteri adedine göre
+   * ağırlıklandırılır: (Σ LTV × adet) ÷ (Σ CAC × adet).
+   */
+  const b2bNewCustomers = input.acquisition.b2bLicense.cacChannels.reduce(
+    (sum, row) => sum + row.newLicenses,
+    0,
+  );
+  const b2cNewCustomers =
+    acquisition.cohortPaid > 0 ? acquisition.cohortPaid : acquisition.b2cPlan.paidParents;
+  const weightedLtv =
+    (b2bLtv ?? 0) * b2bNewCustomers + (b2cLtv > 0 ? b2cLtv : 0) * b2cNewCustomers;
+  const weightedCac = b2bCac * b2bNewCustomers + b2cCac * b2cNewCustomers;
   const referenceBlendedLtvToCac =
-    b2bRatio !== null && b2cRatio !== null ? (b2bRatio + b2cRatio) / 2 : null;
+    b2bRatio !== null && b2cRatio !== null && weightedCac > 0 ? weightedLtv / weightedCac : null;
 
 
   return {
@@ -344,4 +387,30 @@ export function selectScenario(
   const found = list.find((row) => row.name === scenario) ?? list[1];
   return found ?? { name: "Baz", revenueDelta: 0, costDelta: 0, years: [] };
 
+}
+
+export type NetProfitBridgeLine = {
+  label: string;
+  amount: number;
+  /** "total" satırı üstündeki kalemlerin toplamına eşittir. */
+  kind: "total" | "item";
+};
+
+/**
+ * Gelirden net kâra köprü. Her toplam satırı, kendisinden önceki kalemlerin
+ * toplamına eşittir; böylece tabloda gösterilen zincir aritmetik olarak kapanır.
+ */
+export function buildNetProfitBridge(year: ProjectionYear): NetProfitBridgeLine[] {
+  return [
+    { label: "Net satış", amount: year.netSales, kind: "total" },
+    { label: "Satışların maliyeti", amount: -year.variableCost, kind: "item" },
+    { label: "Brüt kâr", amount: year.grossProfit, kind: "total" },
+    { label: "Faaliyet gideri", amount: -year.opex, kind: "item" },
+    { label: "FAVÖK", amount: year.ebitda, kind: "total" },
+    { label: "Amortisman", amount: -year.amortization, kind: "item" },
+    { label: "Finansal maliyet", amount: -year.financialCost, kind: "item" },
+    { label: "Vergi öncesi kâr", amount: year.pretaxProfit, kind: "total" },
+    { label: "Vergi", amount: -year.tax, kind: "item" },
+    { label: "Net kâr", amount: year.netProfit, kind: "total" },
+  ];
 }
