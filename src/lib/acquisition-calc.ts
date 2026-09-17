@@ -21,6 +21,16 @@ export type AcquisitionInput = ReportInput["acquisition"];
 const safeDiv = (a: number, b: number) => (b === 0 ? 0 : a / b);
 const clampRate = (value: number) => Math.min(Math.max(value, 0), 100);
 
+/** Karşılaştırma için metni sadeleştirir (boşluk ve büyük/küçük harf farkı). */
+const flatten = (value: string) => value.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+
+/**
+ * Serbest yazılmış maliyet yeri adını tanımlı kovaya eşler; tanınmayan ad
+ * null döner ve uyarı üretilir (sessizce CAC dışına atılmaz).
+ */
+const normalizeBucket = (value: string): string | null =>
+  cacBuckets.find((bucket) => flatten(bucket) === flatten(value)) ?? null;
+
 export type SpendLedgerLine = {
   name: string;
   mainClass: string;
