@@ -20,6 +20,7 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
+import { salesProfitInsight } from "@/lib/insights";
 import { changePercent, formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/satis")({
@@ -28,7 +29,8 @@ export const Route = createFileRoute("/satis")({
       { title: "Satış Performansı — Aylık Yönetim Raporu" },
       {
         name: "description",
-        content: "Aylık net satış, geçen ay ve bütçeye göre değişim, ürün ve bölge kırılımı, fiyat-hacim etkisi.",
+        content:
+          "Aylık net satış, geçen ay ve bütçeye göre değişim, ürün ve bölge kırılımı, fiyat-hacim etkisi.",
       },
       { property: "og:title", content: "Satış Performansı — Aylık Yönetim Raporu" },
       {
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/satis")({
 });
 
 function SalesPage() {
+  const model = useReport();
   const {
     currentMargin,
     currentMonth,
@@ -49,7 +52,7 @@ function SalesPage() {
     previousMargin,
     previousMonth,
     salesBreakdown,
-  } = useReport();
+  } = model;
 
   if (!hasReportData) {
     return (
@@ -76,50 +79,83 @@ function SalesPage() {
           value={formatAmount(current.sales)}
           delta={{
             text: `${formatPercent(changePercent(current.sales, previous.sales))} önceki aya göre`,
-            tone: "positive",
+            tone: current.sales >= previous.sales ? "positive" : "negative",
           }}
         />
         <KpiCard
           label="Bütçeye göre"
           value={formatAmount(current.sales - current.budgetSales)}
           delta={{
-            text: formatPercent(changePercent(current.sales, current.budgetSales)),
-            tone: "positive",
+            text:
+              current.budgetSales === 0
+                ? "Bütçe girilmedi"
+                : formatPercent(changePercent(current.sales, current.budgetSales)),
+            tone: current.sales >= current.budgetSales ? "positive" : "negative",
           }}
         />
         <KpiCard
           label="Fiyat etkisi"
           value={formatAmount(effect.priceEffect)}
-          note="Büyümenin ana kaynağı fiyat artışı."
+          note={`Hacim ${formatAmount(effect.volumeEffect)} · karma ${formatAmount(effect.mixEffect)}`}
         />
         <KpiCard
-          label="İlk müşterinin payı"
-          value={formatPercent(salesBreakdown.topCustomerShare * 100, 0)}
-          note="Müşteri yoğunlaşma riski takip edilmeli."
+          label="En büyük müşterinin payı"
+          value={formatPercent(salesBreakdown.topCustomerShare, 0)}
+          note={
+            salesBreakdown.topCustomerShare > 20
+              ? "%20 üzeri: müşteri yoğunlaşma riski var."
+              : "Müşteri yoğunlaşması %20 eşiğinin altında."
+          }
         />
       </div>
 
-      <Section title="Aylık satış ve bütçe" description="Gerçekleşen net satış ile bütçelenen satışın seyri.">
+      <Section
+        title="Aylık satış ve bütçe"
+        description="Gerçekleşen net satış ile bütçelenen satışın seyri."
+      >
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={monthly} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+              <XAxis
+                dataKey="month"
+                stroke="var(--muted-foreground)"
+                fontSize={12}
+                tickLine={false}
+              />
+              <YAxis
+                stroke="var(--muted-foreground)"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
               <Tooltip
                 formatter={(value: number) => formatAmount(value)}
-                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar name="Gerçekleşen" dataKey="sales" fill="var(--primary)" />
-              <Line name="Bütçe" dataKey="budgetSales" stroke="var(--warning)" strokeWidth={2} dot={false} />
+              <Line
+                name="Bütçe"
+                dataKey="budgetSales"
+                stroke="var(--warning)"
+                strokeWidth={2}
+                dot={false}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </Section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Ürün grubu kırılımı" description="Bu ay, geçen ay ve bütçe karşılaştırması.">
+        <Section
+          title="Ürün grubu kırılımı"
+          description="Bu ay, geçen ay ve bütçe karşılaştırması."
+        >
           <DataTable
             caption="Ürün grubu bazında satış"
             rowKey={(row) => row.name}
@@ -142,11 +178,26 @@ function SalesPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={salesBreakdown.byRegion} layout="vertical" margin={{ left: 24 }}>
                 <CartesianGrid stroke="var(--border)" horizontal={false} />
-                <XAxis type="number" stroke="var(--muted-foreground)" fontSize={12} axisLine={false} />
-                <YAxis type="category" dataKey="name" stroke="var(--muted-foreground)" fontSize={12} width={90} />
+                <XAxis
+                  type="number"
+                  stroke="var(--muted-foreground)"
+                  fontSize={12}
+                  axisLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  stroke="var(--muted-foreground)"
+                  fontSize={12}
+                  width={90}
+                />
                 <Tooltip
                   formatter={(value: number) => formatAmount(value)}
-                  contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+                  contentStyle={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    fontSize: 12,
+                  }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar name="Bu ay" dataKey="current" fill="var(--primary)" />
@@ -157,7 +208,10 @@ function SalesPage() {
         </Section>
       </div>
 
-      <Section title="Büyümenin kaynağı" description="Hacim, fiyat ve ürün karması etkisinin ayrıştırılması.">
+      <Section
+        title="Büyümenin kaynağı"
+        description="Hacim, fiyat ve ürün karması etkisinin ayrıştırılması."
+      >
         <DataTable
           caption="Fiyat, hacim ve karma etkisi"
           rowKey={(row) => row.label}
@@ -173,13 +227,7 @@ function SalesPage() {
         />
       </Section>
 
-      <Insight question="Satış arttıysa kârlılığa ne oldu?">
-        Satış geçen aya göre {formatPercent(changePercent(current.sales, previous.sales))} arttı, ancak
-        büyümenin büyük bölümü fiyat artışından geliyor ve hammadde maliyeti daha hızlı yükseldi. Brüt
-        marj {formatPercent(previousMargin.gross)} seviyesinden{" "}
-        {formatPercent(currentMargin.gross)} seviyesine geriledi; FAVÖK tutarı ciro
-        büyümesine rağmen azaldı. Ayrıntı için kârlılık sayfasına bakınız.
-      </Insight>
+      <Insight question="Satış arttıysa kârlılığa ne oldu?">{salesProfitInsight(model)}</Insight>
     </AppShell>
   );
 }

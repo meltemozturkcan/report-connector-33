@@ -65,8 +65,10 @@ export function TextField({
 export type RepeatColumn<T> = {
   key: keyof T & string;
   label: string;
-  type?: "text" | "number";
+  type?: "text" | "number" | "select";
   width?: string;
+  /** type = "select" için seçenekler. Listede olmayan eski değer de seçenek olarak korunur. */
+  options?: readonly string[];
 };
 
 type RepeatTableProps<T extends Record<string, unknown>> = {
@@ -88,9 +90,11 @@ export function RepeatTable<T extends Record<string, unknown>>({
   onChange,
   addLabel = "Satır ekle",
 }: RepeatTableProps<T>) {
-  const update = (index: number, key: string, raw: string, type: "text" | "number") => {
+  const update = (index: number, key: string, raw: string, type: "text" | "number" | "select") => {
     const next = rows.map((row, i) =>
-      i === index ? { ...row, [key]: type === "number" ? (raw === "" ? 0 : Number(raw)) : raw } : row,
+      i === index
+        ? { ...row, [key]: type === "number" ? (raw === "" ? 0 : Number(raw)) : raw }
+        : row,
     );
     onChange(next);
   };
@@ -102,7 +106,7 @@ export function RepeatTable<T extends Record<string, unknown>>({
         {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
 
-      <div className="overflow-x-auto border border-border">
+      <div className="relative overflow-x-auto border border-border">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">{label}</caption>
           <thead>
@@ -137,6 +141,36 @@ export function RepeatTable<T extends Record<string, unknown>>({
                 <tr key={index} className="border-b border-border/60 last:border-0">
                   {columns.map((column) => {
                     const type = column.type ?? "number";
+                    if (type === "select") {
+                      const options = column.options ?? [];
+                      const raw = String(row[column.key] ?? "");
+                      const key = (value: string) =>
+                        value.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+                      // "b2c cac" gibi eski serbest yazımlar eşleşen seçenekle gösterilir.
+                      const current = options.find((option) => key(option) === key(raw)) ?? raw;
+                      const list =
+                        current && !options.includes(current) ? [current, ...options] : options;
+                      return (
+                        <td key={column.key} className="px-1 py-1">
+                          <select
+                            aria-label={`${column.label} — satır ${index + 1}`}
+                            value={current}
+                            onChange={(event) =>
+                              update(index, column.key, event.target.value, type)
+                            }
+                            className="h-8 w-full min-w-28 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {current === "" ? <option value="">Seçin</option> : null}
+                            {list.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                                {options.includes(option) ? "" : " (geçersiz)"}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      );
+                    }
                     return (
                       <td key={column.key} className="px-1 py-1">
                         <Input
@@ -145,9 +179,7 @@ export function RepeatTable<T extends Record<string, unknown>>({
                           inputMode={type === "number" ? "decimal" : undefined}
                           step={type === "number" ? "any" : undefined}
                           value={String(row[column.key] ?? "")}
-                          onChange={(event) =>
-                            update(index, column.key, event.target.value, type)
-                          }
+                          onChange={(event) => update(index, column.key, event.target.value, type)}
                           className={type === "number" ? "h-8 tabular-nums" : "h-8"}
                         />
                       </td>

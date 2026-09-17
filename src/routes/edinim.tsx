@@ -266,9 +266,31 @@ function AcquisitionPage() {
 
           <div className="mt-4">
             <Insight question="Hedefi hangi kanal taşıyor?">
-              Ücretli kanalların planlanan CAC'i hedefin üstünde; toplamı hedefe indiren şey mağaza
-              ve organik içerik kaynaklı düşük maliyetli uygun ebeveyn adedidir. Organik adet
-              gerçekleşmezse hedef CAC varsayımı geçersizdir.
+              {(() => {
+                const plan = model.b2cPlan;
+                if (plan.cacTarget <= 0 || plan.channels.length === 0) {
+                  return "Kanal hedefi ve freemium CAC üst sınırı girildiğinde hangi kanalın hedefi taşıdığı burada görünür.";
+                }
+                const above = plan.channels.filter(
+                  (row) => row.eligibleTarget > 0 && row.plannedCac > plan.cacTarget,
+                );
+                const below = plan.channels.filter(
+                  (row) => row.eligibleTarget > 0 && row.plannedCac <= plan.cacTarget,
+                );
+                const names = (rows: typeof above) =>
+                  rows.map((row) => row.channel || "Adsız kanal").join(", ");
+                const total =
+                  plan.freemiumCac <= plan.cacTarget
+                    ? `Toplam planlanan freemium CAC ${tl(plan.freemiumCac, 2)} ile ${tl(plan.cacTarget)} hedefinin içinde.`
+                    : `Toplam planlanan freemium CAC ${tl(plan.freemiumCac, 2)} ile ${tl(plan.cacTarget)} hedefini aşıyor.`;
+                const detail =
+                  above.length === 0
+                    ? " Tüm kanallar tek başına hedefin altında."
+                    : below.length === 0
+                      ? ` Hiçbir kanal tek başına hedefin altında değil (${names(above)}).`
+                      : ` Hedefin üstündeki kanallar: ${names(above)}. Ortalamayı hedefe indiren kanallar: ${names(below)} — bu kanalların uygun ebeveyn adedi gerçekleşmezse hedef CAC varsayımı geçersiz olur.`;
+                return total + detail;
+              })()}
             </Insight>
           </div>
         </Section>
@@ -463,13 +485,12 @@ function AcquisitionPage() {
           />
         </div>
 
-
         <Insight question="Mükerrerlik nasıl engelleniyor?">
           B2C edinim havuzu {tl(model.b2cCacPool)}, B2B edinim havuzu {tl(model.b2bCacPool)},
           yönlendirme havuzu {tl(model.referralCacPool)}. CAC dışı kovalardaki{" "}
-          {tl(model.excludedPool)} (GPU/işlem/depolama, POS komisyonu, uzman emeği, Ar-Ge, muhasebe ve
-          ofis gibi) hiçbir kanal CAC'ine yazılmaz; dağıtılmayan {tl(model.unallocatedTotal)} genel
-          tarafta kalır.
+          {tl(model.excludedPool)} (GPU/işlem/depolama, POS komisyonu, uzman emeği, Ar-Ge, muhasebe
+          ve ofis gibi) hiçbir kanal CAC'ine yazılmaz; dağıtılmayan {tl(model.unallocatedTotal)}{" "}
+          genel tarafta kalır.
         </Insight>
       </Section>
 
@@ -517,7 +538,11 @@ function AcquisitionPage() {
                 align: "right",
                 cell: (row) => (row.paidParents > 0 ? tl(row.paidCac) : "—"),
               },
-              { header: "Harcama payı", align: "right", cell: (row) => formatPercent(row.spendShare, 0) },
+              {
+                header: "Harcama payı",
+                align: "right",
+                cell: (row) => formatPercent(row.spendShare, 0),
+              },
             ]}
           />
           <p className="mt-3 text-sm text-muted-foreground">
@@ -588,8 +613,8 @@ function AcquisitionPage() {
         <Insight question="Bu maliyet sürdürülebilir mi?">
           Ölçülen dönüşüm {formatPercent(model.measuredConversionRate, 1)} olduğunda ücretli CAC{" "}
           {tl(model.measuredPaidCac)}; karma LTV {tl(model.blendedLtv)} ve aylık karma katkı{" "}
-          {tl(model.blendedContribution)} ile geri ödeme{" "}
-          {formatAmount(model.b2cPaybackMonths, 1)} ay, LTV/CAC {formatRatio(model.b2cLtvToCac, 2)}.
+          {tl(model.blendedContribution)} ile geri ödeme {formatAmount(model.b2cPaybackMonths, 1)}{" "}
+          ay, LTV/CAC {formatRatio(model.b2cLtvToCac, 2)}.
         </Insight>
       </Section>
 
@@ -614,7 +639,11 @@ function AcquisitionPage() {
               align: "right",
               cell: (row) => formatPercent(row.contributionRate, 1),
             },
-            { header: "Aylık churn", align: "right", cell: (row) => formatPercent(row.churnRate, 1) },
+            {
+              header: "Aylık churn",
+              align: "right",
+              cell: (row) => formatPercent(row.churnRate, 1),
+            },
             {
               header: "Beklenen süre (ay)",
               align: "right",
@@ -798,11 +827,23 @@ function AcquisitionPage() {
           />
         </div>
         <Insight question="Ne anlama geliyor?">
-          İlk yılda satış büyümesini finanse ettiğiniz için tam maliyet bazında başa başa yakın
-          olabilirsiniz: ağırlıklı CAC ile ilk yıl katkısı{" "}
-          {tl(b2b.licensePrice - b2b.fullCostBeforeCac - b2b.weightedB2bCac)}. Yenileme yılında CAC
-          yüklenmediği için aynı lisansın katkısı {tl(b2b.licensePrice - b2b.fullCostBeforeCac)}'ye
-          çıkar. B2C ve kurum lisansı için ayrı maliyet kartı tutulur; bu karta eklenmez.
+          {(() => {
+            const firstYear = b2b.licensePrice - b2b.fullCostBeforeCac - b2b.weightedB2bCac;
+            const renewal = b2b.licensePrice - b2b.fullCostBeforeCac;
+            const firstText =
+              firstYear >= 0
+                ? `Ağırlıklı CAC dahil ilk yıl lisans başına ${tl(firstYear)} katkı kalıyor.`
+                : `Ağırlıklı CAC dahil ilk yıl lisans başına ${tl(-firstYear)} zarar var: edinim maliyeti ilk yıl katkısını aşıyor.`;
+            const renewalText =
+              renewal >= 0
+                ? ` Yenileme yılında CAC yüklenmediği için katkı ${tl(renewal)}.`
+                : ` CAC olmadan da katkı negatif (${tl(renewal)}): fiyat veya tam maliyet yeniden ele alınmalı.`;
+            const payback =
+              renewal > 0 && b2b.weightedB2bCac > 0
+                ? ` CAC yaklaşık ${formatAmount((b2b.weightedB2bCac / renewal) * 12, 1)} ayda geri döner.`
+                : "";
+            return `${firstText}${renewalText}${payback} B2C ve kurum lisansı için ayrı maliyet kartı tutulur; bu karta eklenmez.`;
+          })()}
         </Insight>
       </Section>
     </AppShell>

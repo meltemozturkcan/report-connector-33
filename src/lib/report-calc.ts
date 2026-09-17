@@ -120,8 +120,11 @@ export function computeReport(input: ReportInput) {
     return { item: r.item, variance: row ? row.actual - row.budget : 0, reason: r.reason };
   });
 
-  const netProfitVariance =
-    budgetVariance.find((r) => r.item === "Net kâr") ?? { item: "Net kâr", budget: 0, actual: 0 };
+  const netProfitVariance = budgetVariance.find((r) => r.item === "Net kâr") ?? {
+    item: "Net kâr",
+    budget: 0,
+    actual: 0,
+  };
 
   // --- Satış kırılımı ---
   const salesBreakdown = {
@@ -195,25 +198,15 @@ export function computeReport(input: ReportInput) {
 
   const cashConversionCycle = input.monthly.map((m) => ({
     month: m.month,
-    days:
-      dso(m.receivables, m.sales) + dso(m.inventory, m.cogs) - dso(m.payables, m.cogs),
+    days: dso(m.receivables, m.sales) + dso(m.inventory, m.cogs) - dso(m.payables, m.cogs),
   }));
 
   // --- Finansman borçları ---
   const ttm = input.monthly.slice(-12);
-  const ttmEbitda = ttm.reduce(
-    (sum, m) => sum + (m.sales - m.cogs - m.opex),
-    0,
-  );
+  const ttmEbitda = ttm.reduce((sum, m) => sum + (m.sales - m.cogs - m.opex), 0);
   const annualisedEbitda = ttm.length > 0 ? safeDiv(ttmEbitda, ttm.length) * 12 : 0;
   const totalDebt = currentRaw?.debt ?? 0;
   const netDebt = totalDebt - (currentRaw?.cash ?? 0);
-  /**
-   * FAVÖK sıfır veya negatifse kaldıraç ve borç servisi karşılama oranı
-   * matematiksel olarak anlamsızdır; uydurma rakam yerine "ölçülemez" işaretlenir.
-   */
-  const leverageMeasurable = annualisedEbitda > 0;
-  const dscrMeasurable = annualisedEbitda > 0 && input.financing.annualDebtService > 0;
   const debt = {
     total: totalDebt,
     previous: previousRaw?.debt ?? 0,
@@ -221,12 +214,14 @@ export function computeReport(input: ReportInput) {
     shortTerm: input.financing.shortTerm,
     longTerm: input.financing.longTerm,
     averageRate: input.financing.averageRate,
-    leverageMeasurable,
-    dscrMeasurable,
-    netDebtToEbitda: leverageMeasurable ? round(safeDiv(netDebt, annualisedEbitda), 2) : 0,
-    dscr: dscrMeasurable
-      ? round(safeDiv(annualisedEbitda, input.financing.annualDebtService), 2)
-      : 0,
+    /** FAVÖK ≤ 0 iken oran anlamsızdır (negatif oran "düşük borç" gibi okunur); 0 döner ve bayrak kapanır. */
+    netDebtToEbitda: annualisedEbitda > 0 ? round(netDebt / annualisedEbitda, 2) : 0,
+    dscr:
+      annualisedEbitda > 0 && input.financing.annualDebtService > 0
+        ? round(annualisedEbitda / input.financing.annualDebtService, 2)
+        : 0,
+    leverageMeasurable: annualisedEbitda > 0,
+    dscrMeasurable: annualisedEbitda > 0 && input.financing.annualDebtService > 0,
     annualisedEbitda: round(annualisedEbitda, 0),
     lines: input.financing.lines,
     maturities: input.financing.maturities,
@@ -252,18 +247,32 @@ export function computeReport(input: ReportInput) {
     (s, m, i) => s + m.operatingCash + (input.monthly[i]?.investingCash ?? 0),
     0,
   );
-  /** Kalan ay sayısı projeksiyon sürücülerinden gelir; elle bütçe girilmez. */
-  const remaining = input.projection.remainingMonths;
+  /**
+   * Kalan ay sayısı eski "forecast" alanından değil, veri girişinde görünen
+   * Projeksiyon sekmesinden gelir (eski alan artık girilemiyordu, hep 0'dı).
+   */
+  const remaining =
+    input.forecast.remainingMonths > 0
+      ? input.forecast.remainingMonths
+      : input.projection.remainingMonths;
   const runRate = (total: number) => safeDiv(total, monthly.length || 1) * remaining;
 
   const baseSales = round(ytdSales + runRate(ytdSales), 0);
   const baseEbitda = round(ytdEbitda + runRate(ytdEbitda), 0);
   const baseNetCash = round(ytdNetCash + runRate(ytdNetCash), 0);
   /**
-   * Senaryo sapması tutarın büyüklüğüne uygulanır: negatif FAVÖK'te kötümser
-   * senaryo daha kötü, iyimser senaryo daha iyi olur.
+   * Senaryo sapması değerin mutlak büyüklüğüne uygulanır. Önceki formül
+   * (v × (1 + %)) negatif FAVÖK'te ters çalışıyordu: −100 FAVÖK kötümser
+   * senaryoda −90'a "iyileşiyordu".
    */
   const scale = (v: number, deltaPct: number) => round(v + Math.abs(v) * (deltaPct / 100), 0);
+
+  /** Yıl sonu bütçesi: aylık bütçe sütunlarından (satış − SMM − gider) aynı run-rate ile türetilir. */
+  const ytdBudgetSales = input.monthly.reduce((s, m) => s + m.budgetSales, 0);
+  const ytdBudgetEbitda = input.monthly.reduce(
+    (s, m) => s + (m.budgetSales - m.budgetCogs - m.budgetOpex),
+    0,
+  );
 
   const worstScenario: Scenario = {
     name: "Kötümser",
@@ -284,26 +293,20 @@ export function computeReport(input: ReportInput) {
     netCash: scale(baseNetCash, input.forecast.bestCaseDelta),
   };
 
-  /**
-   * Yıl sonu bütçesi elle girilmez: aylık bütçe sütunlarının toplamı, kalan
-   * aylar için aynı sütunların aylık ortalamasıyla tamamlanır.
-   */
-  const budgetYtdSales = input.monthly.reduce((s, m) => s + m.budgetSales, 0);
-  const budgetYtdCogs = input.monthly.reduce((s, m) => s + m.budgetCogs, 0);
-  const budgetYtdOpex = input.monthly.reduce((s, m) => s + m.budgetOpex, 0);
-  const budgetYtdEbitda = budgetYtdSales - budgetYtdCogs - budgetYtdOpex;
-  const budgetFullYear = {
-    sales: round(budgetYtdSales + runRate(budgetYtdSales), 0),
-    ebitda: round(budgetYtdEbitda + runRate(budgetYtdEbitda), 0),
-    /** Bütçe nakit sütunu girilmez; nakit bütçesi ölçülmedi olarak kalır. */
-    netCash: 0,
-    netCashMeasured: false,
-  };
-
   const forecast = {
     scenarios: hasReportData ? [worstScenario, baseScenario, bestScenario] : [],
+    budgetFullYear: {
+      sales:
+        input.forecast.budgetFullYearSales !== 0
+          ? input.forecast.budgetFullYearSales
+          : round(ytdBudgetSales + runRate(ytdBudgetSales), 0),
+      ebitda:
+        input.forecast.budgetFullYearEbitda !== 0
+          ? input.forecast.budgetFullYearEbitda
+          : round(ytdBudgetEbitda + runRate(ytdBudgetEbitda), 0),
+      netCash: input.forecast.budgetFullYearNetCash,
+    },
     remainingMonths: remaining,
-    budgetFullYear,
     drivers: input.forecast.drivers,
     path: monthly.map((m) => ({ month: m.month, sales: m.sales, ebitda: m.ebitda })),
     ytd: { sales: ytdSales, ebitda: ytdEbitda, netCash: ytdNetCash },
@@ -333,7 +336,8 @@ export function computeReport(input: ReportInput) {
   });
   const uLast = unitEconomics.length - 1;
   const currentUnitEconomics = unitEconomics[uLast] as (typeof unitEconomics)[number];
-  const previousUnitEconomics = (unitEconomics[uLast - 1] ?? currentUnitEconomics) as (typeof unitEconomics)[number];
+  const previousUnitEconomics = (unitEconomics[uLast - 1] ??
+    currentUnitEconomics) as (typeof unitEconomics)[number];
 
   const channelSpend = input.cac.byChannel.reduce((s, c) => s + c.spend, 0);
   const channelFreeSignups = input.cac.byChannel.reduce((s, c) => s + c.freeSignups, 0);
@@ -443,7 +447,15 @@ type NarrativeArgs = {
   margins: MarginPoint[];
   cashFlow: { operating: number; closing: number; opening: number };
   workingCapital: WorkingCapitalRow[];
-  debt: { total: number; previous: number; net: number; netDebtToEbitda: number; dscr: number };
+  debt: {
+    total: number;
+    previous: number;
+    net: number;
+    netDebtToEbitda: number;
+    dscr: number;
+    leverageMeasurable: boolean;
+    dscrMeasurable: boolean;
+  };
   netProfitVariance: VarianceRow;
   baseScenario: Scenario;
   forecast: { budgetFullYear: { ebitda: number } };
@@ -473,7 +485,8 @@ function buildNarrative(args: NarrativeArgs) {
   const curM = margins[margins.length - 1]!;
   const prevM = margins[margins.length - 2] ?? curM;
 
-  const salesChange = prev.sales === 0 ? 0 : ((cur.sales - prev.sales) / Math.abs(prev.sales)) * 100;
+  const salesChange =
+    prev.sales === 0 ? 0 : ((cur.sales - prev.sales) / Math.abs(prev.sales)) * 100;
   const salesVsBudget =
     cur.budgetSales === 0 ? 0 : ((cur.sales - cur.budgetSales) / Math.abs(cur.budgetSales)) * 100;
 
@@ -487,7 +500,9 @@ function buildNarrative(args: NarrativeArgs) {
     `Faaliyet nakit akışı ${fmt(cashFlow.operating)} bin TL, dönem sonu nakit ${fmt(cashFlow.closing)} bin TL.`,
   );
   where.push(
-    `Net finansal borç ${fmt(debt.net)} bin TL; net borç/FAVÖK ${fmt(debt.netDebtToEbitda, 2)}x, DSCR ${fmt(debt.dscr, 2)}x.`,
+    debt.leverageMeasurable
+      ? `Net finansal borç ${fmt(debt.net)} bin TL; net borç/FAVÖK ${fmt(debt.netDebtToEbitda, 2)}x${debt.dscrMeasurable ? `, DSCR ${fmt(debt.dscr, 2)}x` : ""}.`
+      : `Net finansal borç ${fmt(debt.net)} bin TL; FAVÖK sıfır veya negatif olduğu için net borç/FAVÖK ve DSCR anlamlı değil.`,
   );
 
   const marginDelta = curM.ebitda - prevM.ebitda;
@@ -532,14 +547,16 @@ function buildNarrative(args: NarrativeArgs) {
   const debtDelta = debt.total - debt.previous;
   if (debtDelta > 0) {
     why.push(
-      `Nakit açığı ${fmt(debtDelta)} bin TL ilave borçlanmayla kapatıldı; geri ödeme kapasitesi DSCR ${fmt(debt.dscr, 2)}x ve net borç/FAVÖK ${fmt(debt.netDebtToEbitda, 2)}x ile izlenmelidir.`,
+      debt.leverageMeasurable
+        ? `Finansal borç ${fmt(debtDelta)} bin TL arttı; geri ödeme kapasitesi net borç/FAVÖK ${fmt(debt.netDebtToEbitda, 2)}x${debt.dscrMeasurable ? ` ve DSCR ${fmt(debt.dscr, 2)}x` : ""} ile izlenmelidir.`
+        : `Finansal borç ${fmt(debtDelta)} bin TL arttı; FAVÖK negatif olduğu için borç faaliyetten değil, nakit rezervi veya yeni finansmanla ödenebilir.`,
     );
   } else if (debtDelta < 0) {
     why.push(`Finansal borç ${fmt(Math.abs(debtDelta))} bin TL azaldı; kaldıraç geriliyor.`);
   }
 
   const npVariance = netProfitVariance.actual - netProfitVariance.budget;
-  if (npVariance !== 0) {
+  if (npVariance !== 0 && args.forecast.budgetFullYear.ebitda !== 0) {
     why.push(
       `Net kârda bütçeye göre ${fmt(npVariance)} bin TL sapma var; bu sapma yıl sonu FAVÖK tahminini baz senaryoda ${fmt(args.baseScenario.ebitda)} bin TL seviyesine taşıyor (bütçe ${fmt(args.forecast.budgetFullYear.ebitda)} bin TL).`,
     );

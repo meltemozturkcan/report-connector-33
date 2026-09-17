@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { useAcquisition, useReport } from "@/hooks/useReport";
 import { AppShell, EmptyState } from "@/components/report/AppShell";
@@ -8,6 +18,7 @@ import { Section } from "@/components/report/Section";
 import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Insight } from "@/components/report/Insight";
+import { cacTrendInsight } from "@/lib/insights";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/cac")({
@@ -30,6 +41,7 @@ export const Route = createFileRoute("/cac")({
 });
 
 function CacPage() {
+  const model = useReport();
   const {
     cacDetail,
     currentUnitEconomics,
@@ -37,10 +49,11 @@ function CacPage() {
     ltvDetail,
     previousUnitEconomics,
     unitEconomics,
-  } = useReport();
+  } = model;
   const acquisition = useAcquisition();
 
-  if (!hasReportData) {
+  // CAC sayfası aylık gelir tablosuna değil, birim ekonomisi satırlarına dayanır.
+  if (unitEconomics.length === 0) {
     return (
       <AppShell>
         {acquisition.hasAcquisitionData ? <AcquisitionCacFallback /> : <EmptyState />}
@@ -51,7 +64,7 @@ function CacPage() {
   const current = currentUnitEconomics;
   const previous = previousUnitEconomics;
   const totalSpend = current.marketingSpend + current.salesSpend;
-  const ratio = ltvDetail.currentLtv / current.cac;
+  const ratio = current.cac > 0 ? ltvDetail.currentLtv / current.cac : 0;
 
   return (
     <AppShell>
@@ -66,7 +79,7 @@ function CacPage() {
           value={`${formatAmount(current.cac)} TL`}
           delta={{
             text: `${formatPercent(changePercent(current.cac, previous.cac))} önceki aya göre`,
-            tone: "negative",
+            tone: current.cac <= previous.cac ? "positive" : "negative",
           }}
         />
         <KpiCard
@@ -74,7 +87,8 @@ function CacPage() {
           value={`${formatAmount(cacDetail.paybackMonths, 1)} ay`}
           delta={{
             text: `Hedef ${cacDetail.targetPaybackMonths} ay`,
-            tone: cacDetail.paybackMonths <= cacDetail.targetPaybackMonths ? "positive" : "negative",
+            tone:
+              cacDetail.paybackMonths <= cacDetail.targetPaybackMonths ? "positive" : "negative",
           }}
         />
         <KpiCard
@@ -87,7 +101,7 @@ function CacPage() {
           value={formatAmount(current.newCustomers)}
           delta={{
             text: `${formatPercent(changePercent(current.newCustomers, previous.newCustomers))} önceki aya göre`,
-            tone: "positive",
+            tone: current.newCustomers >= previous.newCustomers ? "positive" : "negative",
           }}
         />
       </div>
@@ -103,12 +117,19 @@ function CacPage() {
               <XAxis dataKey="month" tickLine={false} axisLine={false} className="text-xs" />
               <YAxis tickLine={false} axisLine={false} className="text-xs" width={64} />
               <Tooltip formatter={(value: number) => formatAmount(value)} />
-              <Line type="monotone" dataKey="cac" name="CAC (TL)" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="cac"
+                name="CAC (TL)"
+                stroke="var(--primary)"
+                strokeWidth={2}
+                dot={false}
+              />
               <Line
                 type="monotone"
                 dataKey="newCustomers"
                 name="Yeni müşteri"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="var(--muted-foreground)"
                 strokeWidth={2}
                 dot={false}
               />
@@ -116,10 +137,7 @@ function CacPage() {
           </ResponsiveContainer>
         </div>
         <Insight question="Harcama arttıysa kazanım verimi ne oldu?">
-          Kazanım harcaması {formatAmount(totalSpend)} bin TL'ye çıkarken CAC beş ayda{" "}
-          {formatPercent(changePercent(current.cac, unitEconomics[0]!.cac))} arttı. Yeni müşteri sayısı
-          artıyor ancak her ek müşteri bir öncekinden daha pahalıya geliyor: büyüme ölçeklenmiyor,
-          satın alınıyor.
+          {cacTrendInsight(model)}
         </Insight>
       </Section>
 
@@ -138,8 +156,8 @@ function CacPage() {
               <XAxis dataKey="channel" tickLine={false} axisLine={false} className="text-xs" />
               <YAxis tickLine={false} axisLine={false} className="text-xs" width={64} />
               <Tooltip formatter={(value: number) => `${formatAmount(value)} TL`} />
-              <Bar dataKey="freemiumCac" name="Freemium CAC (TL)" fill="hsl(var(--muted-foreground))" />
-              <Bar dataKey="cac" name="Ücretli CAC (TL)" fill="hsl(var(--primary))" />
+              <Bar dataKey="freemiumCac" name="Freemium CAC (TL)" fill="var(--muted-foreground)" />
+              <Bar dataKey="cac" name="Ücretli CAC (TL)" fill="var(--primary)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -161,7 +179,11 @@ function CacPage() {
             ]}
             columns={[
               { header: "Kanal", cell: (row) => row.channel },
-              { header: "Harcama (bin TL)", align: "right", cell: (row) => formatAmount(row.spend) },
+              {
+                header: "Harcama (bin TL)",
+                align: "right",
+                cell: (row) => formatAmount(row.spend),
+              },
               {
                 header: "Yeni uygun ücretsiz ebeveyn",
                 align: "right",
@@ -188,11 +210,13 @@ function CacPage() {
         </div>
         <Insight question="Nerede bağlandı?">
           Toplam kazanım harcaması {formatAmount(cacDetail.totalSpend)} bin TL; blended freemium CAC{" "}
-          {cacDetail.totalFreeSignups > 0 ? `${formatAmount(cacDetail.channelFreemiumCac)} TL` : "—"},
-          blended ücretli CAC{" "}
+          {cacDetail.totalFreeSignups > 0
+            ? `${formatAmount(cacDetail.channelFreemiumCac)} TL`
+            : "—"}
+          , blended ücretli CAC{" "}
           {cacDetail.totalPaidCustomers > 0 ? `${formatAmount(cacDetail.channelPaidCac)} TL` : "—"}.
-          Ücretli CAC'i ortalamanın üzerinde olan kanallardan, altında kalan kanallara bütçe kaydırmak
-          blended CAC'i doğrudan aşağı çeker.
+          Ücretli CAC'i ortalamanın üzerinde olan kanallardan, altında kalan kanallara bütçe
+          kaydırmak blended CAC'i doğrudan aşağı çeker.
         </Insight>
       </Section>
 
@@ -203,7 +227,9 @@ function CacPage() {
           rows={cacDetail.funnel.map((step, index) => ({
             ...step,
             conversion:
-              index === 0 ? null : (step.count / (cacDetail.funnel[index - 1]?.count ?? step.count)) * 100,
+              index === 0
+                ? null
+                : (step.count / (cacDetail.funnel[index - 1]?.count ?? step.count)) * 100,
           }))}
           columns={[
             { header: "Aşama", cell: (row) => row.stage },
@@ -216,8 +242,8 @@ function CacPage() {
           ]}
         />
         <Insight question="Bundan sonra ne yapacağız?">
-          Hunideki her aşamanın dönüşüm oranı doğrudan CAC'i belirler: son aşamadaki dönüşüm bir puan
-          iyileştiğinde aynı harcama daha fazla müşteri getirir ve geri ödeme süresi hedeflenen{" "}
+          Hunideki her aşamanın dönüşüm oranı doğrudan CAC'i belirler: son aşamadaki dönüşüm bir
+          puan iyileştiğinde aynı harcama daha fazla müşteri getirir ve geri ödeme süresi hedeflenen{" "}
           {cacDetail.targetPaybackMonths} aya yaklaşır.
         </Insight>
       </Section>
@@ -268,7 +294,9 @@ function AcquisitionCacFallback() {
       </div>
 
       <Section
-        title={plan.period ? `Kanal bazlı planlanan CAC — ${plan.period}` : "Kanal bazlı planlanan CAC"}
+        title={
+          plan.period ? `Kanal bazlı planlanan CAC — ${plan.period}` : "Kanal bazlı planlanan CAC"
+        }
         description="Kanala atanmış doğrudan maliyet + ortak maliyetin uygun ebeveyn payına göre dağıtımı."
       >
         <DataTable
@@ -288,12 +316,32 @@ function AcquisitionCacFallback() {
           ]}
           columns={[
             { header: "Kanal", cell: (row) => row.channel },
-            { header: "Uygun ücretsiz ebeveyn", align: "right", cell: (row) => formatAmount(row.eligibleTarget) },
+            {
+              header: "Uygun ücretsiz ebeveyn",
+              align: "right",
+              cell: (row) => formatAmount(row.eligibleTarget),
+            },
             { header: "Payı", align: "right", cell: (row) => formatPercent(row.eligibleShare, 1) },
-            { header: "Doğrudan maliyet (TL)", align: "right", cell: (row) => formatAmount(row.directCost) },
-            { header: "Ortak pay (TL)", align: "right", cell: (row) => formatAmount(row.sharedCost, 2) },
-            { header: "Toplam maliyet (TL)", align: "right", cell: (row) => formatAmount(row.totalCost, 2) },
-            { header: "Planlanan CAC (TL)", align: "right", cell: (row) => formatAmount(row.plannedCac, 2) },
+            {
+              header: "Doğrudan maliyet (TL)",
+              align: "right",
+              cell: (row) => formatAmount(row.directCost),
+            },
+            {
+              header: "Ortak pay (TL)",
+              align: "right",
+              cell: (row) => formatAmount(row.sharedCost, 2),
+            },
+            {
+              header: "Toplam maliyet (TL)",
+              align: "right",
+              cell: (row) => formatAmount(row.totalCost, 2),
+            },
+            {
+              header: "Planlanan CAC (TL)",
+              align: "right",
+              cell: (row) => formatAmount(row.plannedCac, 2),
+            },
           ]}
         />
         <Insight question="Hedef tutuyor mu?">
@@ -315,8 +363,16 @@ function AcquisitionCacFallback() {
             rows={plan.actuals}
             columns={[
               { header: "Kanal", cell: (row) => row.channel },
-              { header: "Gerçek harcama (TL)", align: "right", cell: (row) => formatAmount(row.actualSpend) },
-              { header: "Uygun ücretsiz ebeveyn", align: "right", cell: (row) => formatAmount(row.actualEligible) },
+              {
+                header: "Gerçek harcama (TL)",
+                align: "right",
+                cell: (row) => formatAmount(row.actualSpend),
+              },
+              {
+                header: "Uygun ücretsiz ebeveyn",
+                align: "right",
+                cell: (row) => formatAmount(row.actualEligible),
+              },
               {
                 header: "Gerçek freemium CAC (TL)",
                 align: "right",

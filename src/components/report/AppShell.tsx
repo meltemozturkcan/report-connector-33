@@ -1,8 +1,15 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { FileSearch } from "lucide-react";
 import type { ReactNode } from "react";
 
+import {
+  entryTabLabel,
+  reportRouteLabels,
+  sourceTabsFor,
+  type ReportRoute,
+} from "@/components/entry/entry-tabs";
 import { Button } from "@/components/ui/button";
+import { useReportWorkspace } from "@/hooks/report-workspace";
 import { useAuth } from "@/hooks/useAuth";
 import { useReport } from "@/hooks/useReport";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +30,9 @@ const navItems = [
 ] as const;
 
 export function EmptyState() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const firstSource =
+    pathname in reportRouteLabels ? sourceTabsFor(pathname as ReportRoute)[0] : undefined;
   return (
     <div
       role="status"
@@ -35,7 +45,9 @@ export function EmptyState() {
         otomatik olarak dolacaktır.
       </p>
       <Button asChild className="mt-5" size="sm">
-        <Link to="/veri-girisi">Veri girişine git</Link>
+        <Link to="/veri-girisi" search={firstSource ? { sekme: firstSource } : {}}>
+          {firstSource ? `Veri girişi → ${entryTabLabel(firstSource)}` : "Veri girişine git"}
+        </Link>
       </Button>
     </div>
   );
@@ -61,6 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="flex items-center gap-3">
             {metaText ? <p className="text-xs text-muted-foreground">{metaText}</p> : null}
+            {session ? <SaveBadge /> : null}
             {session ? (
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 Çıkış
@@ -98,5 +111,35 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
     </div>
+  );
+}
+
+/** Otomatik kaydın durumu her sayfanın üst çubuğunda görünür. */
+function SaveBadge() {
+  const { status, saveNow } = useReportWorkspace();
+  if (status === "saved" || status === "signed-out") return null;
+  const text =
+    status === "saving"
+      ? "Kaydediliyor…"
+      : status === "dirty"
+        ? "Kaydedilmemiş değişiklik"
+        : status === "blocked"
+          ? "Otomatik kayıt kapalı"
+          : "Kaydedilemedi";
+  const isProblem = status === "error" || status === "blocked";
+  return (
+    <button
+      type="button"
+      onClick={() => void saveNow()}
+      disabled={status === "saving"}
+      className={
+        isProblem
+          ? "text-xs font-medium text-destructive underline-offset-2 hover:underline"
+          : "text-xs text-muted-foreground underline-offset-2 hover:underline"
+      }
+      title="Şimdi kaydet"
+    >
+      {text}
+    </button>
   );
 }

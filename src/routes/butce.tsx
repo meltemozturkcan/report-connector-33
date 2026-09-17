@@ -7,6 +7,7 @@ import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
+import { budgetInsight } from "@/lib/insights";
 import { formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/butce")({
@@ -15,7 +16,8 @@ export const Route = createFileRoute("/butce")({
       { title: "Bütçe – Gerçekleşen Sapmaları — Aylık Yönetim Raporu" },
       {
         name: "description",
-        content: "Satış, maliyet, faaliyet gideri ve kâr kalemlerinde bütçe-gerçekleşen sapması ve nedenleri.",
+        content:
+          "Satış, maliyet, faaliyet gideri ve kâr kalemlerinde bütçe-gerçekleşen sapması ve nedenleri.",
       },
       { property: "og:title", content: "Bütçe – Gerçekleşen Sapmaları" },
       {
@@ -28,6 +30,7 @@ export const Route = createFileRoute("/butce")({
 });
 
 function BudgetPage() {
+  const model = useReport();
   const {
     baseScenario,
     budgetVariance,
@@ -35,7 +38,7 @@ function BudgetPage() {
     hasReportData,
     netProfitVariance,
     varianceReasons,
-  } = useReport();
+  } = model;
 
   if (!hasReportData) {
     return (
@@ -69,9 +72,16 @@ function BudgetPage() {
             {
               header: "Sapma %",
               align: "right",
-              cell: (row) => (
-                <Delta value={((row.actual - row.budget) / Math.abs(row.budget)) * 100} digits={1} suffix="%" />
-              ),
+              cell: (row) =>
+                row.budget === 0 ? (
+                  "—"
+                ) : (
+                  <Delta
+                    value={((row.actual - row.budget) / Math.abs(row.budget)) * 100}
+                    digits={1}
+                    suffix="%"
+                  />
+                ),
             },
           ]}
         />
@@ -91,14 +101,7 @@ function BudgetPage() {
       </Section>
 
       <Insight question="Bütçeden sapıldıysa yıl sonu tahmini ne olacak?">
-        Satış bütçenin üzerinde olmasına rağmen brüt marj ve finansman gideri sapmaları net kârı
-        bütçenin {formatPercent(
-          ((netProfitVariance.budget - netProfitVariance.actual) / netProfitVariance.budget) * 100,
-        )}{" "}
-        altına indirdi. Aynı marj ve faiz seviyesi devam ederse yıl sonu FAVÖK baz senaryoda{" "}
-        {formatAmount(baseScenario.ebitda)}, bütçe ise{" "}
-        {formatAmount(forecast.budgetFullYear.ebitda)} seviyesindedir; aradaki fark{" "}
-        {formatAmount(forecast.budgetFullYear.ebitda - baseScenario.ebitda)}.
+        {budgetInsight(model)}
       </Insight>
     </AppShell>
   );

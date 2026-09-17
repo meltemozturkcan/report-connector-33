@@ -7,6 +7,7 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { Section } from "@/components/report/Section";
 import { DataTable } from "@/components/report/DataTable";
 import { ModelSummary, useHasModelData } from "@/components/report/ModelSummary";
+import { executiveChain } from "@/lib/insights";
 import { changePercent, formatAmount, formatPercent, formatRatio } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -21,7 +22,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Yönetici Özeti — Aylık Yönetim Raporu" },
       {
         property: "og:description",
-        content: "Satış, kârlılık, nakit ve borç göstergelerinin birbirine bağlandığı tek sayfalık özet.",
+        content:
+          "Satış, kârlılık, nakit ve borç göstergelerinin birbirine bağlandığı tek sayfalık özet.",
       },
     ],
   }),
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/")({
 });
 
 function ExecutiveSummary() {
+  const model = useReport();
   const {
     baseScenario,
     cashFlow,
@@ -43,7 +46,7 @@ function ExecutiveSummary() {
     netProfitVariance,
     previousMonth,
     receivables,
-  } = useReport();
+  } = model;
   const hasModelData = useHasModelData();
 
   if (!hasReportData) {
@@ -102,11 +105,20 @@ function ExecutiveSummary() {
         />
         <KpiCard
           label="Net borç / FAVÖK"
-          value={formatRatio(debt.netDebtToEbitda, 1)}
-          delta={{
-            text: `DSCR ${formatRatio(debt.dscr, 2)}`,
-            tone: debt.netDebtToEbitda <= 3 && debt.dscr >= 1.3 ? "positive" : "negative",
-          }}
+          value={debt.leverageMeasurable ? formatRatio(debt.netDebtToEbitda, 1) : "Ölçülemez"}
+          delta={
+            debt.leverageMeasurable
+              ? {
+                  text: debt.dscrMeasurable
+                    ? `DSCR ${formatRatio(debt.dscr, 2)}`
+                    : "DSCR ölçülemez",
+                  tone:
+                    debt.netDebtToEbitda <= 3 && (!debt.dscrMeasurable || debt.dscr >= 1.3)
+                      ? "positive"
+                      : "negative",
+                }
+              : { text: "FAVÖK sıfır veya negatif", tone: "negative" }
+          }
         />
       </div>
 
@@ -137,10 +149,7 @@ function ExecutiveSummary() {
           ))}
         </ul>
         <p className="mt-4 border-l-2 border-primary bg-muted/60 px-4 py-3 text-sm leading-relaxed">
-          Kısaca: satış arttı, kâr artmadı; kâr nakde dönmedi, işletme sermayesinde bağlandı; nakit
-          açığı borçla kapandı, geri ödeme kapasitesi zayıfladı. Bütçe sapması yıl sonu FAVÖK
-          tahminini {formatAmount(forecast.budgetFullYear.ebitda - baseScenario.ebitda)} bin
-          TL aşağı çekiyor.
+          {executiveChain(model)}
         </p>
       </Section>
 
@@ -174,7 +183,7 @@ function ExecutiveSummary() {
             { label: "Net borç", value: formatAmount(debt.net) },
             { label: "Alacak gün sayısı", value: `${receivables.days} gün` },
             { label: "Stok gün sayısı", value: `${inventory.days} gün` },
-            { label: "DSCR", value: formatRatio(debt.dscr, 2) },
+            { label: "DSCR", value: debt.dscrMeasurable ? formatRatio(debt.dscr, 2) : "Ölçülemez" },
           ].map((item) => (
             <div key={item.label} className="flex justify-between border-b border-border/60 py-1.5">
               <dt className="text-sm text-muted-foreground">{item.label}</dt>
@@ -193,7 +202,7 @@ function ExecutiveSummary() {
           { to: "/karlilik", label: "Kârlılık" },
           { to: "/nakit", label: "Nakit ve işletme sermayesi" },
           { to: "/finansman", label: "Borç ve CAPEX" },
-          { to: "/tahmin", label: "Yıl sonu tahmini" },
+          { to: "/tahmin", label: "Projeksiyon 2027–2032" },
           { to: "/cac", label: "Müşteri kazanım maliyeti (CAC)" },
           { to: "/ltv", label: "Müşteri yaşam boyu değeri (LTV)" },
           { to: "/edinim", label: "Edinim ve birim maliyet" },

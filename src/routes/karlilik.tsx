@@ -1,8 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { useProjection, useReport } from "@/hooks/useReport";
-import type { ProjectionScenario } from "@/lib/projection-calc";
+import { buildNetProfitBridge, type ProjectionScenario } from "@/lib/projection-calc";
 
 import { AppShell, EmptyState } from "@/components/report/AppShell";
 import { PageHeader } from "@/components/report/PageHeader";
@@ -11,6 +20,7 @@ import { KpiCard } from "@/components/report/KpiCard";
 import { DataTable } from "@/components/report/DataTable";
 import { Delta } from "@/components/report/Delta";
 import { Insight } from "@/components/report/Insight";
+import { profitToCashInsight } from "@/lib/insights";
 import { formatAmount, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/karlilik")({
@@ -19,7 +29,8 @@ export const Route = createFileRoute("/karlilik")({
       { title: "Kârlılık — Aylık Yönetim Raporu" },
       {
         name: "description",
-        content: "Brüt kâr, FAVÖK ve net kâr marjlarının seyri, marj daralmasının nedenleri ve nakde yansıması.",
+        content:
+          "Brüt kâr, FAVÖK ve net kâr marjlarının seyri, marj daralmasının nedenleri ve nakde yansıması.",
       },
       { property: "og:title", content: "Kârlılık — Aylık Yönetim Raporu" },
       {
@@ -32,6 +43,7 @@ export const Route = createFileRoute("/karlilik")({
 });
 
 function ProfitabilityPage() {
+  const model = useReport();
   const {
     cashFlow,
     currentMargin,
@@ -41,9 +53,8 @@ function ProfitabilityPage() {
     previousMargin,
     previousMonth,
     salesBreakdown,
-  } = useReport();
+  } = model;
   const projection = useProjection();
-
 
   if (!hasReportData) {
     return (
@@ -56,21 +67,11 @@ function ProfitabilityPage() {
   const baseScenarioYears =
     projection.scenariosAccrual.find((row: ProjectionScenario) => row.name === "Baz")?.years ?? [];
 
-  const projectionYear = baseScenarioYears[baseScenarioYears.length - 1];
-  const netProfitBridge: { label: string; amount: number; kind: "total" | "cost" }[] = projectionYear
-    ? [
-        { label: "Net satış", amount: projectionYear.netSales, kind: "total" },
-        { label: "Satışların maliyeti", amount: -projectionYear.variableCost, kind: "cost" },
-        { label: "Brüt kâr", amount: projectionYear.grossProfit, kind: "total" },
-        { label: "Faaliyet gideri", amount: -projectionYear.opex, kind: "cost" },
-        { label: "FAVÖK", amount: projectionYear.ebitda, kind: "total" },
-        { label: "Amortisman", amount: -projectionYear.amortization, kind: "cost" },
-        { label: "Finansal maliyet", amount: -projectionYear.financialCost, kind: "cost" },
-        { label: "Vergi", amount: -projectionYear.tax, kind: "cost" },
-        { label: "Net kâr", amount: projectionYear.netProfit, kind: "total" },
-      ]
-    : [];
-
+  /** Kârlılık sayfası da Projeksiyon sayfasıyla aynı köprüyü kullanır (tek formül). */
+  const projectionYear =
+    [...baseScenarioYears].reverse().find((row) => row.netSales !== 0 || row.opex !== 0) ??
+    baseScenarioYears[baseScenarioYears.length - 1];
+  const netProfitBridge = projectionYear ? buildNetProfitBridge(projectionYear) : [];
 
   return (
     <AppShell>
@@ -83,31 +84,52 @@ function ProfitabilityPage() {
         <KpiCard
           label="Brüt kâr"
           value={formatAmount(currentMonth.grossProfit)}
-          delta={{ text: `${formatPercent(currentMargin.gross)} marj`, tone: "negative" }}
+          delta={{
+            text: `${formatPercent(currentMargin.gross)} marj`,
+            tone: currentMargin.gross >= previousMargin.gross ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="FAVÖK"
           value={formatAmount(currentMonth.ebitda)}
-          delta={{ text: `${formatPercent(currentMargin.ebitda)} marj`, tone: "negative" }}
+          delta={{
+            text: `${formatPercent(currentMargin.ebitda)} marj`,
+            tone: currentMargin.ebitda >= previousMargin.ebitda ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="Net kâr"
           value={formatAmount(currentMonth.netProfit)}
-          delta={{ text: `${formatPercent(currentMargin.net)} marj`, tone: "negative" }}
+          delta={{
+            text: `${formatPercent(currentMargin.net)} marj`,
+            tone: currentMargin.net >= previousMargin.net ? "positive" : "negative",
+          }}
         />
         <KpiCard
           label="Nakde dönüşüm"
-          value={formatPercent((cashFlow.operating / currentMonth.ebitda) * 100)}
+          value={
+            currentMonth.ebitda > 0
+              ? formatPercent((cashFlow.operating / currentMonth.ebitda) * 100)
+              : "FAVÖK ≤ 0"
+          }
           note="Faaliyet nakit akışı / FAVÖK"
         />
       </div>
 
-      <Section title="Marj seyri" description="Brüt kâr, FAVÖK ve net kâr marjlarının son 6 aylık gelişimi.">
+      <Section
+        title="Marj seyri"
+        description="Brüt kâr, FAVÖK ve net kâr marjlarının son 6 aylık gelişimi."
+      >
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={margins} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} />
+              <XAxis
+                dataKey="month"
+                stroke="var(--muted-foreground)"
+                fontSize={12}
+                tickLine={false}
+              />
               <YAxis
                 stroke="var(--muted-foreground)"
                 fontSize={12}
@@ -117,12 +139,34 @@ function ProfitabilityPage() {
               />
               <Tooltip
                 formatter={(value: number) => formatPercent(value)}
-                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line name="Brüt kâr marjı" dataKey="gross" stroke="var(--primary)" strokeWidth={2} dot={false} />
-              <Line name="FAVÖK marjı" dataKey="ebitda" stroke="var(--positive)" strokeWidth={2} dot={false} />
-              <Line name="Net kâr marjı" dataKey="net" stroke="var(--destructive)" strokeWidth={2} dot={false} />
+              <Line
+                name="Brüt kâr marjı"
+                dataKey="gross"
+                stroke="var(--primary)"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                name="FAVÖK marjı"
+                dataKey="ebitda"
+                stroke="var(--positive)"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                name="Net kâr marjı"
+                dataKey="net"
+                stroke="var(--destructive)"
+                strokeWidth={2}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -132,7 +176,7 @@ function ProfitabilityPage() {
         title="Gelirden net kâra köprü"
         description={
           projectionYear
-            ? `${projectionYear.year} · baz senaryo · girilen satış, maliyet ve finansman verisinden hesaplanır.`
+            ? `${projectionYear.year} · baz senaryo · tutarlar TL (aylık tablolar bin TL) · Projeksiyon sayfasıyla aynı hesap.`
             : "Projeksiyon dönemi girilmedi."
         }
       >
@@ -156,13 +200,16 @@ function ProfitabilityPage() {
           />
         ) : (
           <p className="text-sm text-muted-foreground">
-            Net kâr köprüsü için Veri Girişi → Projeksiyon sekmesindeki dönem, vergi oranı ve finansman satırlarını
-            girin.
+            Net kâr köprüsü için Veri Girişi → Projeksiyon sekmesindeki dönem, vergi oranı ve
+            finansman satırlarını girin.
           </p>
         )}
       </Section>
 
-      <Section title="Ürün / müşteri kırılımı" description="Ciro kırılımı; ürün bazlı marj henüz ölçülmedi.">
+      <Section
+        title="Ürün / müşteri kırılımı"
+        description="Ciro kırılımı; ürün bazlı marj henüz ölçülmedi."
+      >
         <DataTable
           caption="Ürün grubu ciro kırılımı"
           rowKey={(row) => row.name}
@@ -178,13 +225,7 @@ function ProfitabilityPage() {
         />
       </Section>
 
-
-      <Insight question="Kâr arttıysa nakde yansıdı mı?">
-        Hayır. Ciro {formatAmount(currentMonth.sales - previousMonth.sales)} artmasına rağmen FAVÖK{" "}
-        {formatAmount(currentMonth.ebitda - previousMonth.ebitda)} değişti ve faaliyet nakit akışı{" "}
-        {formatAmount(cashFlow.operating)} ile negatife döndü. Aradaki fark işletme sermayesinde
-        bağlandı; ayrıntı nakit sayfasındadır.
-      </Insight>
+      <Insight question="Kâr arttıysa nakde yansıdı mı?">{profitToCashInsight(model)}</Insight>
     </AppShell>
   );
 }
