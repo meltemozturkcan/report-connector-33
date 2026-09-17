@@ -96,15 +96,19 @@ export function computeProjection(input: ReportInput) {
     .map((tier) => tier.name)
     .filter((name) => name.trim() && !isIncludedTier(name));
 
-  /** Ham gider defterinden yıl bazlı faaliyet gideri ve satışların maliyeti. */
+  /**
+   * Ham gider defterinden yıl bazlı faaliyet gideri ve satışların maliyeti.
+   * Gelir tablosuna kalemin tamamı yazılır; atıf oranı yalnızca CAC analizinde
+   * hangi payın edinime düştüğünü gösterir, harcamanın kalanı da gerçek giderdir.
+   */
   const ledgerFor = (year: number) => {
     const lines = acquisition.ledger.filter((line) => yearOf(line.period) === year);
     const cogs = lines
       .filter((line) => line.bucket === "Ürün COGS")
-      .reduce((sum, line) => sum + line.attributedAmount, 0);
+      .reduce((sum, line) => sum + line.amount, 0);
     const opex = lines
       .filter((line) => line.bucket !== "Ürün COGS")
-      .reduce((sum, line) => sum + line.attributedAmount, 0);
+      .reduce((sum, line) => sum + line.amount, 0);
     return { cogs, opex, count: lines.length };
   };
 
