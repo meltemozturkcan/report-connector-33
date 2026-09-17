@@ -427,7 +427,13 @@ export function computeAcquisition(input: AcquisitionInput) {
   const planFreemiumCac = safeDiv(planPool, planEligibleTotal);
   const planCacCeiling = planEligibleTotal * plan.cacTarget;
   const planBuffer = planCacCeiling - planPool;
-  const planConversionRate = clampRate(unit.freeToPaidRate);
+  /**
+   * Plan dönüşümü elle girilmediyse cohort'lardan ölçülen oran kullanılır;
+   * böylece ücretli CAC 0 görünmez.
+   */
+  const planConversionRate = clampRate(
+    unit.freeToPaidRate > 0 ? unit.freeToPaidRate : measuredConversionRate,
+  );
   const planPaidParents = (planEligibleTotal * planConversionRate) / 100;
   const planBasicParents = (planPaidParents * basicMix) / 100;
   const planPremiumParents = planPaidParents - planBasicParents;
