@@ -388,3 +388,29 @@ export function selectScenario(
   return found ?? { name: "Baz", revenueDelta: 0, costDelta: 0, years: [] };
 
 }
+
+export type NetProfitBridgeLine = {
+  label: string;
+  amount: number;
+  /** "total" satırı üstündeki kalemlerin toplamına eşittir. */
+  kind: "total" | "item";
+};
+
+/**
+ * Gelirden net kâra köprü. Her toplam satırı, kendisinden önceki kalemlerin
+ * toplamına eşittir; böylece tabloda gösterilen zincir aritmetik olarak kapanır.
+ */
+export function buildNetProfitBridge(year: ProjectionYear): NetProfitBridgeLine[] {
+  return [
+    { label: "Net satış", amount: year.netSales, kind: "total" },
+    { label: "Satışların maliyeti", amount: -year.variableCost, kind: "item" },
+    { label: "Brüt kâr", amount: year.grossProfit, kind: "total" },
+    { label: "Faaliyet gideri", amount: -year.opex, kind: "item" },
+    { label: "FAVÖK", amount: year.ebitda, kind: "total" },
+    { label: "Amortisman", amount: -year.amortization, kind: "item" },
+    { label: "Finansal maliyet", amount: -year.financialCost, kind: "item" },
+    { label: "Vergi öncesi kâr", amount: year.pretaxProfit, kind: "total" },
+    { label: "Vergi", amount: -year.tax, kind: "item" },
+    { label: "Net kâr", amount: year.netProfit, kind: "total" },
+  ];
+}
