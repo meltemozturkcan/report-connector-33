@@ -366,9 +366,25 @@ export function computeAcquisition(input: AcquisitionInput) {
     ...input.spendLedger
       .filter((item) => item.attributionRate > 100 || item.attributionRate < 0)
       .map((item) => `"${item.name}" atıf oranı %0–100 aralığında olmalı.`),
-    b2cCacPool > 0 && cohortSpend > 0 && Math.abs(b2cCacPool - cohortSpend) > 1
-      ? `Defterden B2C edinimine atfedilen harcama ${Math.round(b2cCacPool)} TL, cohort tablolarındaki harcama ${Math.round(cohortSpend)} TL: fark kanal tablolarına dağıtılmamış.`
-      : null,
+    ...[...new Set(unknownBuckets)].map(
+      (bucket) =>
+        `"${bucket}" geçerli bir maliyet yeri değil; kalem hiçbir kovaya girmedi. Geçerli yerler: ${cacBuckets.join(", ")}.`,
+    ),
+    /**
+     * Defter ↔ cohort mutabakatı yalnızca aynı dönemde yapılır: yıllık bir
+     * defter satırı aylık cohort ile karşılaştırılmaz.
+     */
+    ...cohorts
+      .map((cohort) => {
+        const key = flatten(cohort.cohort);
+        if (!key || cohort.totalSpend === 0) return null;
+        const ledgerSpend = ledger
+          .filter((line) => line.bucket === "B2C CAC" && flatten(line.period) === key)
+          .reduce((sum, line) => sum + line.attributedAmount, 0);
+        if (ledgerSpend === 0 || Math.abs(ledgerSpend - cohort.totalSpend) <= 1) return null;
+        return `${cohort.cohort}: defterden B2C edinimine atfedilen harcama ${Math.round(ledgerSpend)} TL, cohort tablosundaki harcama ${Math.round(cohort.totalSpend)} TL; fark kanallara dağıtılmamış.`;
+      })
+      .filter((item): item is string => item !== null),
     unassignedCacItems.length > 0
       ? `${unassignedCacItems.length} B2B CAC alt kalemi hiçbir kanala bağlı değil: kanal adını kanal tablosuyla aynı yazın.`
       : null,
