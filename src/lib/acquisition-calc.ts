@@ -105,20 +105,23 @@ export type AcquisitionModel = ReturnType<typeof computeAcquisition>;
 
 export function computeAcquisition(input: AcquisitionInput) {
   /* ---------- 1. Harcama defteri ve atıf ---------- */
+  const unknownBuckets: string[] = [];
   const ledger: SpendLedgerLine[] = input.spendLedger.map((item) => {
     const rate = clampRate(item.attributionRate);
     const attributedAmount = (item.amount * rate) / 100;
+    const bucket = normalizeBucket(item.bucket);
+    if (item.bucket.trim() && bucket === null) unknownBuckets.push(item.bucket.trim());
     return {
       name: item.name,
       mainClass: item.mainClass ?? "",
-      bucket: item.bucket,
+      bucket: bucket ?? item.bucket,
       channel: item.channel ?? "",
       period: item.period,
       amount: item.amount,
       attributionRate: rate,
       attributedAmount,
       unallocatedAmount: item.amount - attributedAmount,
-      countsInCac: cacBucketNames.includes(item.bucket),
+      countsInCac: bucket !== null && cacBucketNames.includes(bucket),
       note: item.note,
     };
   });
