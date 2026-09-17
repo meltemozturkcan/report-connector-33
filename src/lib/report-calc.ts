@@ -208,6 +208,12 @@ export function computeReport(input: ReportInput) {
   const annualisedEbitda = ttm.length > 0 ? safeDiv(ttmEbitda, ttm.length) * 12 : 0;
   const totalDebt = currentRaw?.debt ?? 0;
   const netDebt = totalDebt - (currentRaw?.cash ?? 0);
+  /**
+   * FAVÖK sıfır veya negatifse kaldıraç ve borç servisi karşılama oranı
+   * matematiksel olarak anlamsızdır; uydurma rakam yerine "ölçülemez" işaretlenir.
+   */
+  const leverageMeasurable = annualisedEbitda > 0;
+  const dscrMeasurable = annualisedEbitda > 0 && input.financing.annualDebtService > 0;
   const debt = {
     total: totalDebt,
     previous: previousRaw?.debt ?? 0,
@@ -215,8 +221,12 @@ export function computeReport(input: ReportInput) {
     shortTerm: input.financing.shortTerm,
     longTerm: input.financing.longTerm,
     averageRate: input.financing.averageRate,
-    netDebtToEbitda: round(safeDiv(netDebt, annualisedEbitda), 2),
-    dscr: round(safeDiv(annualisedEbitda, input.financing.annualDebtService), 2),
+    leverageMeasurable,
+    dscrMeasurable,
+    netDebtToEbitda: leverageMeasurable ? round(safeDiv(netDebt, annualisedEbitda), 2) : 0,
+    dscr: dscrMeasurable
+      ? round(safeDiv(annualisedEbitda, input.financing.annualDebtService), 2)
+      : 0,
     annualisedEbitda: round(annualisedEbitda, 0),
     lines: input.financing.lines,
     maturities: input.financing.maturities,
