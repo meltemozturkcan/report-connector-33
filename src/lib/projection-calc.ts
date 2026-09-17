@@ -154,6 +154,8 @@ export function computeProjection(input: ReportInput) {
     collectWarnings: boolean,
   ): ProjectionYear[] => {
     let openingCash = settings.openingCash;
+    /** Geçmiş yıl zararı sonraki yılların vergi matrahından düşülür. */
+    let lossCarryForward = 0;
     return yearsInPlan.map(({ period, year }) => {
       const includedTiers = period.tiers.filter((tier) => isIncludedTier(tier.name));
       const includedArr = includedTiers.reduce((sum, tier) => sum + tier.revenue, 0);
@@ -175,15 +177,36 @@ export function computeProjection(input: ReportInput) {
       const grossProfit = netSales - variableCost;
       const opexSource: ProjectionYear["opexSource"] =
         ledger.opex > 0 ? "ledger" : period.fixedCost > 0 ? "fixedCost" : "none";
-      const rawOpex = opexSource === "ledger" ? ledger.opex : opexSource === "fixedCost" ? period.fixedCost : 0;
+      /**
+       * Tablo 4.4-3 sabit maliyeti amortismanı içerir. Amortisman FAVÖK'ten
+       * sonra ayrı satır olduğu için sabit maliyetten çıkarılır; aynı tutar iki
+       * kez düşülmez.
+       */
+      const table443Amortization =
+        feasibility.fixedBreakdown.equipmentDepreciation +
+        feasibility.fixedBreakdown.buildingDepreciation;
+      const fixedCostAmortization =
+        opexSource === "fixedCost" && period.fixedCostSource === "table443"
+          ? Math.min(table443Amortization, period.fixedCost)
+          : 0;
+      const rawOpex =
+        opexSource === "ledger"
+          ? ledger.opex
+          : opexSource === "fixedCost"
+            ? period.fixedCost - fixedCostAmortization
+            : 0;
       const opex = rawOpex * (1 + costDelta / 100);
       const ebitda = grossProfit - opex;
 
-      const amortization = amortizationFor(year);
+      const amortization = amortizationFor(year) + fixedCostAmortization;
       const financing = financingFor(year);
       const pretaxProfit = ebitda - amortization - financing.interest;
       const taxRate = clampRate(settings.corporateTaxRate);
-      const tax = pretaxProfit > 0 ? (pretaxProfit * taxRate) / 100 : 0;
+      const lossOffset = pretaxProfit > 0 ? Math.min(lossCarryForward, pretaxProfit) : 0;
+      const taxBase = Math.max(pretaxProfit - lossOffset, 0);
+      const tax = (taxBase * taxRate) / 100;
+      lossCarryForward =
+        pretaxProfit < 0 ? lossCarryForward - pretaxProfit : lossCarryForward - lossOffset;
       const netProfit = pretaxProfit - tax;
 
       const investingCash = -capexFor(year);
